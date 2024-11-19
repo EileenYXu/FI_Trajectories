@@ -150,6 +150,7 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
               lmer.df = "satterthwaite")
 
 #fit contrasts between MeFaff3lvl level at 3 timepoints
+
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
@@ -995,7 +996,9 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
               lmer.df = "satterthwaite")
 
 #fit contrasts between MeFaff3lvl level at 3 timepoints
+
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
+
 
 #replace with actual age values
 emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
@@ -1164,6 +1167,7 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
               lmer.df = "satterthwaite")
 
 #fit contrasts between MeFaff3lvl level at 3 timepoints
+
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
