@@ -66,6 +66,20 @@ dat = readRDS("G://users/eileen/Food_Ins/DATA/wt_GUS_social.rds")
 age_vals = seq(min(dat$Age), max(dat$Age), 0.5) #list of ages to make scores for
 age_cent = age_vals - mean(dat$Age, na.rm = T) #mean center to fit with the model
 at_vals = list(age.cent = age_cent, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex))
+
+# setup emmeans parameters for contrasts, using fewer timepoints
+age_vals_c = c(mean(dat[dat$sweep == "De",]$Age, na.rm = T), 
+               mean(dat[dat$sweep == "Dg",]$Age, na.rm = T), 
+               mean(dat[dat$sweep == "Dj",]$Age, na.rm = T))
+age_cent_c = age_vals_c - mean(dat$Age, na.rm = T)
+at_vals_c = list(age.cent = age_cent_c, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2))
+
+# contrast grid to use for emmeans, comparing enough/not enough for each FI level
+contrast_grid = list(
+  "Not at all.Not enough vs Enough" = c(-1, 0, 0, 0, 0, 1),
+  "A little.Not enough vs Enough" = c(0, -1, 1, 0, 0, 0),
+  "A lot/fair amount.Not enough vs Enough" = c(0, 0, 0, -1, 1, 0)
+)
 ```
 
 Total sample (i.e. unique IDs) = `r length(unique(dat$Idnumber))` \
@@ -99,8 +113,12 @@ table(dat$sweep, dat$food_help) |> kbl() |> kable_styling(full_width = F)
 
 ## Conduct problems {.tabset}
 
+
 ### No covariates
 
+<details>
+  <summary><b>Estimates</b></summary>
+  
 ```{r}
 fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + (1 + age.cent |Idnumber),
                  REML = TRUE ,
@@ -114,8 +132,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-<summary>Plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+<summary><b>Plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help , 
@@ -146,6 +187,9 @@ fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "N
 
 ### Covariates sex and income
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + Sex + DeEqv5 +
              (1 + age.cent |Idnumber),
@@ -160,8 +204,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + Sex + DeEqv5, 
@@ -189,7 +236,7 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 ```{r}
 fig = pred %>% filter(DeEqv5 == "5") %>% ggplot() +
@@ -207,6 +254,9 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 
 ### Sex, income, maternal MH
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + Sex + DeEqv5 +
              scale(DeSf12mn) + (1 + age.cent |Idnumber),
@@ -221,8 +271,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + Sex + DeEqv5 + scale(DeSf12mn), 
@@ -250,7 +303,7 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 ```{r}
 fig = pred %>% filter(DeEqv5 == "5") %>% ggplot() +
@@ -268,6 +321,9 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 
 ### Sex, income, maternal MH + SIMD
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + Sex + DeEqv5 +
              scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
@@ -282,8 +338,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2, 
@@ -311,7 +390,7 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 ```{r}
 fig = pred %>% filter(DeEqv5 == "5", ALeSNim2 == "5") %>% ggplot() +
@@ -331,6 +410,9 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 
 ### No covariates
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdem1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + (1 + age.cent |Idnumber),
                  REML = TRUE ,
@@ -344,8 +426,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-<summary>Plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+<summary><b>Plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help, 
@@ -376,6 +481,9 @@ fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "N
 
 ### Covariates sex and income
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdem1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + Sex + DeEqv5 +
              (1 + age.cent |Idnumber),
@@ -390,8 +498,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help  + Sex + DeEqv5, 
@@ -419,7 +530,7 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 ```{r}
 fig = pred %>% filter(DeEqv5 == "5") %>% ggplot() +
@@ -437,6 +548,9 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 
 ### Sex, income, maternal MH
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdem1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + Sex + DeEqv5 + scale(DeSf12mn) +
              (1 + age.cent |Idnumber),
@@ -451,8 +565,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help  + Sex + DeEqv5 + scale(DeSf12mn), 
@@ -481,7 +598,7 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 
 ```{r}
@@ -500,6 +617,9 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 
 ### Sex, income, maternal MH, SIMD
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdem1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 +
              (1 + age.cent |Idnumber),
@@ -514,8 +634,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help  + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2, 
@@ -544,7 +687,7 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 
 ```{r}
@@ -565,6 +708,9 @@ fig + facet_grid(Sex ~factor(food, levels = c("A lot/fair amount", "A little", "
 
 ### No covariates
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdhy1 ~ food_help*age.cent + (1 + age.cent |Idnumber),
                  REML = TRUE ,
@@ -578,8 +724,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-<summary>Plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+<summary><b>Plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help, 
@@ -610,6 +779,9 @@ fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "N
 
 ### Covariates sex and income
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdhy1 ~ food_help*age.cent + 
              Sex + DeEqv5 + (1 + age.cent |Idnumber),
@@ -624,8 +796,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help +
@@ -655,7 +830,7 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 
 ```{r}
@@ -674,6 +849,9 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 
 ### Sex, income, maternal MH
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdhy1 ~ food_help*age.cent + 
              Sex + DeEqv5 + scale(DeSf12mn) + (1 + age.cent |Idnumber),
@@ -688,8 +866,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help +
@@ -719,7 +900,7 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 
 ```{r}
@@ -738,6 +919,9 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 
 ### Sex, income, maternal MH + SIMD
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdhy1 ~ food_help*age.cent + 
              Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
@@ -752,8 +936,30 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r}
 emm = emmeans(fit, specs = ~ age.cent*food_help +
@@ -783,7 +989,7 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 
 ```{r}
@@ -804,6 +1010,9 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 
 ### No Covariates
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdpr1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + food_help*I(age.cent^4) + (1 + age.cent |Idnumber),
                  REML = TRUE ,
@@ -817,8 +1026,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-<summary>Plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+<summary><b>Plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + food_help*I(age.cent^4), 
@@ -849,6 +1081,9 @@ fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "N
 
 ### Covariates sex and income
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdpr1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + food_help*I(age.cent^4) + Sex + DeEqv5 +
              (1 + age.cent |Idnumber),
@@ -863,8 +1098,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + food_help*I(age.cent^4) + Sex + DeEqv5, 
@@ -893,7 +1131,7 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 
 ```{r}
@@ -912,6 +1150,9 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 
 ### Sex, income, maternal MH
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdpr1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + food_help*I(age.cent^4) + Sex + DeEqv5 + scale(DeSf12mn) +
              (1 + age.cent |Idnumber),
@@ -926,8 +1167,11 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + food_help*I(age.cent^4) + Sex + DeEqv5 + scale(DeSf12mn), 
@@ -956,7 +1200,7 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 ```{r}
 fig = pred %>% filter(DeEqv5 == "5") %>% ggplot() +
@@ -974,6 +1218,9 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 
 ### Sex, income, maternal MH + SIMD
 
+<details>
+  <summary><b>Estimates</b></summary>
+
 ```{r}
 fit = lmer(Dsdpr1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + food_help*I(age.cent^4) + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 +
              (1 + age.cent |Idnumber),
@@ -988,8 +1235,31 @@ kbl(t(summary(fit)[["AICtab"]])) %>%
 sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 ```
 
+</details>
+
+
+
 <details>
-  <summary>Lowest income plot</summary>
+  <summary><b>Contrasts</b></summary>
+
+```{r}
+emm_c = emmeans(fit, specs = ~ food_help*age.cent, 
+              at = at_vals_c, 
+              lmer.df = "satterthwaite")
+
+#fit contrasts between MeFaff3lvl level at 3 timepoints
+emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
+#replace emm_comparisons age.cent column with actual age values
+emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+
+emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
+  kable_styling(full_width = F)
+```
+
+</details>
+
+<details>
+  <summary><b>Lowest income plot</b></summary>
 
 ```{r results='asis'}
 emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + food_help*I(age.cent^4) + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2, 
@@ -1017,7 +1287,7 @@ fig + facet_grid(Sex ~ factor(food, levels = c("A lot/fair amount", "A little", 
 </details>
 
 <details>
-  <summary>Highest income plot</summary>
+  <summary><b>Highest income plot</b></summary>
 
 ```{r}
 fig = pred %>% filter(DeEqv5 == "5", ALeSNim2 == "5") %>% ggplot() +
