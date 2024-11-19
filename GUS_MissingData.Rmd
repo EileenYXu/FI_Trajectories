@@ -1,0 +1,66 @@
+---
+title: "Exploring excluded individuals"
+author: "Eileen Xu"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
+
+library(kableExtra)
+library(tidyverse)
+library(summarytools)
+```
+
+## Exploring demographics of individuals excluded from GUS analyses due to missing data
+
+### At sweep 5
+
+```{r}
+#all sweep 5 data - this is the earliest timepoint so biggest sample. I *could* take this further and see when individuals dropped out/excluded but this might be overkill as the study also might have those analyses already.
+sw5 = read.csv("G://users/eileen/Food_Ins/DATA/sw5_demog.csv")
+
+all_ID = sw5$Idnumber
+
+#final dataset after excluding
+dat = readRDS("G://users/eileen/Food_Ins/DATA/wt_GUS_long.rds")
+included_ID = dat$Idnumber %>% unique()
+
+sw5 = sw5[,-1] %>% mutate(
+  included = ifelse(Idnumber %in% included_ID, 1, 0))
+
+sw5 = sw5 %>% select(Sex, MeFaff3lvl, MatEdu, EqvIncome, ALeSNim2, 
+                     PtnrEdu, MatEmploy, MatEthnicity, DeSf12mn, included)
+```
+
+
+```{r results='asis'}
+#knitr::kable(list(incsummary[-10,], excsummary[-10,]), row.names = FALSE)
+sw5 %>% group_by(included) %>% 
+  dfSummary(round.digits = 3,
+  valid.col = F, varnumbers = F, labels.col = T,
+  na.col = F, graph.col = F, style= "grid", headings = F, plain.ascii = F)
+```
+
+## Longitudinal changes across sweeps
+
+```{r}
+#Group dat by sweep and then create a summary table which includes the mean and SD of Age, HGagC, Dsdem1, Dsdco1, Dsdhy1, Dsdpr1
+#and the number of individuals in each sweep
+
+dat |> group_by(sweep) |> 
+  summarise(
+    n = n(),
+    Age = mean(Age, na.rm = T),
+    HGagC = mean(HGagC, na.rm = T),
+    Dsdem1 = mean(Dsdem1, na.rm = T),
+    Dsdco1 = mean(Dsdco1, na.rm = T),
+    Dsdhy1 = mean(Dsdhy1, na.rm = T),
+    Dsdpr1 = mean(Dsdpr1, na.rm = T)
+  ) |> 
+  kable("html", col.names = c("Sweep", "N", "Age", "Age(mths)", "Emotional", "Conduct", "Hyper", "Peer"), digits = 3)
+```
+

@@ -1,0 +1,768 @@
+---
+title: "GUS: Food insecurity, parental social support and sex differences"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis", fig.width = 10)
+```
+
+```{r load packages}
+library(lme4)
+library(lmerTest)
+library(kableExtra)
+library(tidyverse)
+library(emmeans)
+emm_options(lmerTest.limit = 20000, pbkrtest.limit = 20000)
+```
+
+```{r}
+# function to print any singular fit and convergence issues warning messages.
+check_fit <- function(m) {
+  msg = summary(m)$optinfo$conv$lme4$messages %>% unlist()
+  if (any(grepl("isSingular", msg))==T) {
+    print("Singular fit")
+  } else {print("No singular fit")}
+  
+  if (any(grepl("failed to converge", msg))==T) {
+    print("Failed to converge")
+  } else  {print("No convergence issues")}
+  } 
+```
+
+
+```{r ggplot theme}
+pal = c("#E69F00","#56B4E9","#009E73",
+        "#F5C710","#0072B2","#D55E00",
+        "#CC79A7","#999999","#000000")
+
+# Set default ggplot colour palette to colourblind-friendly Okabe Ito (2008)
+options(ggplot2.discrete.colour=pal, ggplot2.discrete.fill=pal)
+
+# Set global theme for ggplot
+my_theme <- function(base_size = 12, base_family = ""){
+  theme_bw(base_size = base_size, base_family = base_family) %+replace%
+    theme(
+      panel.background = element_rect(fill = "transparent"),
+      plot.background = element_rect(fill = "transparent", color = NA),
+      panel.grid.major = element_line(colour = "grey88"),
+      panel.grid.minor = element_line(colour = "grey99"),
+      legend.background = element_rect(fill = "transparent"),
+      legend.box.background = element_rect(fill = "transparent"),
+      panel.ontop = FALSE
+    )
+}
+
+theme_set(my_theme())
+```
+
+```{r}
+dat = readRDS("G://users/eileen/Food_Ins/DATA/wt_GUS_social.rds")
+
+age_vals = seq(min(dat$Age), max(dat$Age), 0.5) #list of ages to make scores for
+age_cent = age_vals - mean(dat$Age, na.rm = T) #mean center to fit with the model
+at_vals = list(age.cent = age_cent, DeEqv5 = levels(dat$DeEqv5))
+```
+
+## Analyses of parental social support and food insecurity, split by sex
+
+```{r}
+dat %>% distinct(Idnumber, .keep_all = T) %>% group_by(Sex) %>% 
+  summarise(N = n(),
+            Food_none = sum(MeFaff3lvl=="Not at all"),
+            Food_little = sum(MeFaff3lvl=="A little"),
+            Food_lot = sum(MeFaff3lvl=="A lot/fair amount"),
+            Help_enough = sum(help_bin=="Enough"),
+            Help_not_enough = sum(help_bin=="Not enough"),
+            Food_none_Help_enough = sum(food_help=="Not at all.Enough"),
+            Food_little.Help_enough = sum(food_help=="A little.Enough"),
+            Food_lot.Help_enough = sum(food_help=="A lot/fair amount.Enough"),
+            Food_none.Help_not_enough = sum(food_help=="Not at all.Not enough"),
+            Food_little.Help_not_enough = sum(food_help=="A little.Not enough"),
+            Food_lot.Help_not_enough = sum(food_help=="A lot/fair amount.Not enough")
+            ) %>% t() %>% kbl() %>% kable_styling()
+
+```
+
+## Female only {.tabset}
+
+```{r}
+datF = dat %>% filter(Sex=="F")
+```
+
+### Conduct problems {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = ggplot() +
+  geom_line(data = pred,
+            aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(data = pred,
+              aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Conduct")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + DeEqv5 + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Conduct")
+
+fig + facet_grid(DeEqv5 ~factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+### Emotional problems {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdem1 ~ food_help*age.cent + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = ggplot() +
+  geom_line(data = pred,
+            aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(data = pred,
+              aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Emotional ")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdem1 ~ food_help*age.cent + DeEqv5 + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Emotional")
+
+fig + facet_grid(DeEqv5 ~factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+### Hyperactivity {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdhy1 ~ food_help*age.cent + food_help*I(age.cent^2) + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Hyperactivity ")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdhy1 ~ food_help*age.cent + food_help*I(age.cent^2) + DeEqv5 + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Hyperactivity")
+  
+fig + facet_grid(DeEqv5 ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+### Peer problems {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdpr1 ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + I(age.cent^4)*food_help + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help +I(age.cent^4)*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Peer Problems")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdpr1 ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help +I(age.cent^4)*food_help + DeEqv5 + 
+             (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help +I(age.cent^4)*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Peer Problems")
+  
+fig + facet_grid(DeEqv5 ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+
+## Male only {.tabset}
+
+```{r}
+datM = dat %>% filter(Sex=="M")
+```
+
+### Conduct problems {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = ggplot() +
+  geom_line(data = pred,
+            aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(data = pred,
+              aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Conduct")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdco1 ~ food_help*age.cent + food_help*I(age.cent^2) + DeEqv5 + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datF ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Conduct")
+
+fig + facet_grid(DeEqv5 ~factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+### Emotional problems {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdem1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3), 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = ggplot() +
+  geom_line(data = pred,
+            aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(data = pred,
+              aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Emotional ")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdem1 ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + DeEqv5 + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ food_help*age.cent + food_help*I(age.cent^2) + food_help*I(age.cent^3) + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Emotional")
+
+fig + facet_grid(DeEqv5 ~factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+### Hyperactivity {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdhy1 ~ food_help*age.cent + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Hyperactivity ")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdhy1 ~ food_help*age.cent + DeEqv5 + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Hyperactivity")
+  
+fig + facet_grid(DeEqv5 ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+### Peer problems {.tabset}
+
+#### No covariates
+
+```{r}
+fit = lmer(Dsdpr1 ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Peer Problems")
+  
+fig + facet_grid(. ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
+
+#### Plus income
+
+```{r}
+fit = lmer(Dsdpr1 ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + DeEqv5 + 
+             (1 + age.cent |Idnumber),
+                 REML =TRUE ,
+                 data = datM ,
+                 weights = Djwtbth2a,
+                 control = lmerControl(optimizer="bobyqa",
+                                      optCtrl=list(maxfun=2e5)))
+check_fit(fit)
+kbl(t(summary(fit)[["AICtab"]])) %>%
+  kable_styling(full_width = F)
+sjPlot::tab_model(fit)
+```
+
+#### Plot by income
+
+```{r}
+emm = emmeans(fit, specs = ~ age.cent*food_help + I(age.cent^2)*food_help + I(age.cent^3)*food_help + DeEqv5, 
+              at = at_vals, 
+              lmer.df = "satterthwaite")
+
+# add a column with the original age values
+pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)  %>%
+  mutate(
+    food = stringr::str_split_i(string = food_help, "\\.", i = 1),
+    help = stringr::str_split_i(string = food_help, "\\.", i = 2)
+  )
+
+fig = pred %>% filter(DeEqv5 == c("1", "5")) %>% ggplot() +
+  geom_line(aes(x = age_vals, y = emmean, colour = help),
+            linewidth = 1.5, na.rm = T) + 
+  geom_ribbon(aes(x = age_vals, y = emmean, fill = help,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.2, na.rm = T) +
+  xlab("Age") + ylab("SDQ Peer Problems")
+  
+fig + facet_grid(DeEqv5 ~ factor(food, levels = c("A lot/fair amount", "A little", "Not at all")))
+```
