@@ -65,10 +65,8 @@ age_vals = seq(min(dat$Age), max(dat$Age), 0.5) #list of ages to make scores for
 age_cent = age_vals - mean(dat$Age, na.rm = T) #mean center to fit with the model
 at_vals = list(age.cent = age_cent, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2))
 
-# setup emmeans parameters for contrasts, using fewer timepoints
-age_vals_c = c(mean(dat[dat$sweep == "De",]$Age, na.rm = T), 
-               mean(dat[dat$sweep == "Dg",]$Age, na.rm = T), 
-               mean(dat[dat$sweep == "Dj",]$Age, na.rm = T))
+# setup emmeans parameters for contrasts, age 5 - 16
+age_vals_c = seq(5, 16, 1)
 age_cent_c = age_vals_c - mean(dat$Age, na.rm = T)
 at_vals_c = list(age.cent = age_cent_c, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2))
 
@@ -125,7 +123,7 @@ df.plot = dat |>
   <summary><b>Estimates</b></summary>
 
 
-```{r}
+```{r ConductEstNone}
 fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + (1 + age.cent |Idnumber),
                  REML = TRUE ,
                  data = dat ,
@@ -144,20 +142,18 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r ConductContrNone}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
 
-#fit contrasts between MeFaff3lvl level at 3 timepoints
-
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
-#replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+#make age column that matches value in age_cent_c with actual ages in age_vals_c
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -294,7 +290,7 @@ emmeans.plot + facet_grid(~ Sex)
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r ConductEstAll}
 fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
                  REML = TRUE ,
                  data = dat ,
@@ -313,19 +309,19 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r ConductContrAll}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
 
-#fit contrasts between MeFaff3lvl level at 3 timepoints
+#fit contrasts between MeFaff3lvl level at 4 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -400,7 +396,7 @@ df.plot = dat |>
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r EmotionEstNone}
 fit = lmer(Dsdem1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + (1 + age.cent |Idnumber),
                  REML = TRUE ,
                  data = dat ,
@@ -419,7 +415,7 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r EmotionContrNone}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
@@ -428,10 +424,10 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -571,7 +567,7 @@ emmeans.plot + facet_grid(~ Sex)
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r EmotionEstAll}
 fit = lmer(Dsdem1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
                  REML = TRUE ,
                  data = dat ,
@@ -590,7 +586,7 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r EmotionContrAll}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
@@ -599,10 +595,10 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -676,7 +672,7 @@ df.plot = dat |>
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r HyperEstNone}
 fit = lmer(Dsdhy1 ~ age.cent*MeFaff3lvl + 
              (1 + age.cent |Idnumber),
                  REML = TRUE ,
@@ -696,7 +692,7 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r HyperContrNone}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
@@ -705,10 +701,9 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
-
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -851,7 +846,7 @@ emmeans.plot + facet_grid(~ Sex)
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r HyperEstAll}
 fit = lmer(Dsdhy1 ~ age.cent*MeFaff3lvl + 
              Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
                  REML = TRUE ,
@@ -871,7 +866,7 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r HyperContrAll}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
@@ -880,10 +875,10 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -971,7 +966,7 @@ df.plot = dat |>
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r PeerEstNone}
 fit = lmer(Dsdpr1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + (1 + age.cent |Idnumber),
                  REML = TRUE ,
                  data = dat ,
@@ -990,7 +985,7 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r PeerContrNone}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
@@ -1001,10 +996,10 @@ emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl")
 
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -1143,7 +1138,7 @@ emmeans.plot + facet_grid(~ Sex)
 <details>
   <summary><b>Estimates</b></summary>
 
-```{r}
+```{r PeerEstAll}
 fit = lmer(Dsdpr1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
                  REML = TRUE ,
                  data = dat ,
@@ -1161,7 +1156,7 @@ sjPlot::tab_model(fit, show.se = T, show.std = T, show.stat = T, show.df = T)
 <details>
   <summary><b>Contrasts</b></summary>
 
-```{r}
+```{r PeerContrAll}
 emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent, 
               at = at_vals_c, 
               lmer.df = "satterthwaite")
@@ -1171,10 +1166,10 @@ emm_c = emmeans(fit, specs = ~ MeFaff3lvl*age.cent,
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "MeFaff3lvl") |> broom::tidy()
 
 #replace with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>

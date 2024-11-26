@@ -67,10 +67,8 @@ age_vals = seq(min(dat$Age), max(dat$Age), 0.5) #list of ages to make scores for
 age_cent = age_vals - mean(dat$Age, na.rm = T) #mean center to fit with the model
 at_vals = list(age.cent = age_cent, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex))
 
-# setup emmeans parameters for contrasts, using fewer timepoints
-age_vals_c = c(mean(dat[dat$sweep == "De",]$Age, na.rm = T), 
-               mean(dat[dat$sweep == "Dg",]$Age, na.rm = T), 
-               mean(dat[dat$sweep == "Dj",]$Age, na.rm = T))
+# setup emmeans parameters for contrasts, age 5 - 16
+age_vals_c = seq(5, 16, 1)
 age_cent_c = age_vals_c - mean(dat$Age, na.rm = T)
 at_vals_c = list(age.cent = age_cent_c, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2))
 
@@ -144,13 +142,12 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
               at = at_vals_c, 
               lmer.df = "satterthwaite")
 
-#fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -353,10 +350,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -441,10 +438,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -649,10 +646,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -739,10 +736,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -950,10 +947,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -1041,10 +1038,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
@@ -1250,10 +1247,10 @@ emm_c = emmeans(fit, specs = ~ food_help*age.cent,
 #fit contrasts between MeFaff3lvl level at 3 timepoints
 emm_comparisons = contrast(emm_c, method = contrast_grid, simple = "food_help") |> broom::tidy()
 #replace emm_comparisons age.cent column with actual age values
-emm_comparisons$Age = c(rep(age_vals_c[1], 3), rep(age_vals_c[2], 3), rep(age_vals_c[3], 3))
+emm_comparisons$Age = age_vals_c[match(emm_comparisons$age.cent, age_cent_c)]
 
 emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> kbl(digits=3) |> 
-  kable_styling(full_width = F)
+  kable_styling(full_width = F) |> scroll_box(height="300px")
 ```
 
 </details>
