@@ -1,0 +1,315 @@
+---
+title: "Supplement_Analysis_Prep_GUS"
+author: "Eileen Xu"
+date: "2024-04-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, results = "asis", message = F, warning = F)
+library(tidyverse)
+library(kableExtra)
+```
+
+## Coding youth-report SDQ, CIDI and GAD-7 at sweep 10
+
+SDQ - 25 questions, starts with "CjSDQ"
+
+CIDI - 13 questions, starts with "CjCid"
+
+GAD-7 - 7 questions, starts with "CjGad"
+
+
+```{r}
+sw10 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_bc1sw10_protect.tab")
+
+vars = c("IDNumber|HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1|CjSDQ|CjCid|CjGad")
+
+sw10 = sw10 %>% select(grep(vars, names(.), ignore.case = T))
+```
+
+### Code youth-reported SDQ subscale scores:
+
+Following GUS procedures for calculating each subscale. Scores are prorated so that participants who answered at least 3/5 questions for the subscale can be included. Take the mean value for each subscale question and multiply by 5. Then round to the next integer.
+
+Values <0 are missing. 
+
+```{r emotional}
+emot = c("IDNumber", "CjSDQac", "CjSDQwo", "CjSDQun", "CjSDQne", "CjSDQfe")
+missingif = c(-9:-1)
+
+sdq_e = sw10 %>% select(all_of(emot)) %>% mutate(
+  across(emot[2:6], ~ifelse(. %in% missingif, NA,.-1)))
+sdq_e$missing = apply(sdq_e, 1, function(x) sum(is.na(x)))
+sdq_e$C_emot = ifelse(sdq_e$missing<3, rowMeans(sdq_e[,2:6])*5, NA)
+```
+
+```{r conduct}
+cond = c("IDNumber", "CjSDQan", "CjSDQto", "CjSDQfg", "CjSDQly", "CjSDQst")
+
+sdq_c = sw10 %>% select(all_of(cond)) %>% mutate(
+  across(cond[2:6], ~ifelse(. %in% missingif, NA,.-1)))
+sdq_c$CjSDQto = 2 - sdq_c$CjSDQto 
+sdq_c$missing = apply(sdq_c, 1, function(x) sum(is.na(x)))
+sdq_c$C_conduct = ifelse(sdq_c$missing<3, rowMeans(sdq_c[,2:6])*5, NA)
+```
+
+Conduct symptoms variable CjSDQfi = "Still thinking about how things have been for you over the last six months. I am constantly fidgeting or squirming." In the data dictionary the second line is omitted but this is the correct variable from the GUS questionnaire.
+
+```{r hyper}
+hyper = c("IDNumber", "CjSDQrt", "CjSDQfi", "CjSDQdi", "CjSDQth", "CjSDQwk")
+
+sdq_h = sw10 %>% select(all_of(hyper)) %>% mutate(
+  across(hyper[2:6], ~ifelse(. %in% missingif, NA,.-1)))
+sdq_h$CjSDQth = 2 - sdq_h$CjSDQth
+sdq_h$CjSDQwk = 2 - sdq_h$CjSDQwk
+sdq_h$missing = apply(sdq_h, 1, function(x) sum(is.na(x)))
+sdq_h$C_hyper = ifelse(sdq_h$missing<3, rowMeans(sdq_h[,2:6])*5, NA)
+```
+
+```{r peer}
+peer = c("IDNumber", "CjSDQal", "CjSDQfr", "CjSDQli", "CjSDQpb", "CjSDQgo")
+
+sdq_p = sw10 %>% select(all_of(peer)) %>% mutate(
+  across(peer[2:6], ~ifelse(. %in% missingif, NA,.-1)))
+sdq_p$CjSDQfr = 2 - sdq_p$CjSDQfr
+sdq_p$CjSDQli = 2 - sdq_p$CjSDQli
+sdq_p$missing = apply(sdq_p, 1, function(x) sum(is.na(x)))
+sdq_p$C_peer = ifelse(sdq_p$missing<3, rowMeans(sdq_p[,2:6])*5, NA)
+```
+
+```{r}
+scales = list(sdq_c, sdq_e, sdq_h, sdq_p)
+sdq = scales %>% reduce(left_join, by='IDNumber') %>% select(IDNumber, C_emot, C_conduct, C_hyper, C_peer)
+
+rm(sdq_c, sdq_e, sdq_h, sdq_p)
+```
+
+### Coding CIDI and GAD-7
+
+Code CIDI - in GUS the responses are coded as (1) Yes, (2) No
+
+Since the secondary symptoms were only asked if participants answered "Yes" to the first question "Have you ever in your life had a period lasting several days or longer when most of the day you felt depressed, or when you lost interest in most things you usually enjoy like school and hobbies? ", secondary symptoms totalling 4 or more count as a depression case.
+
+CjCidDp - Ever had several days or longer when most of the day you felt depressed/lost interest in things you usually enjoy?
+
+CjCidWp - Did this start within two months of the death of someone close or after a stressful/traumatic event?
+
+CjCidFl - How much of the day did these feelings usually last? (1) All day (2) Most of the day (3) Half of the day (4) Less than half of the day
+
+CjCidDa - Did you feel this way... (1) Every day (2) Almost every day (3) Less often
+
+CjCidLe - Did you feel more tired or low on energy than is usual for you?
+
+CjCidWe - Did you gain or lose weight without trying, or did you stay about the same weight? (1) Gained weight (2) Lost weight (3) Both gained and lost some weight (4) Stayed about the same or was on a diet
+
+CjCidSc - Did your sleep change?
+
+CjCidCo - Did you have a lot more trouble concentrating than usual?
+
+CjCidDo - People sometimes feel down on themselves, no good, worthless. Did you feel this way?
+
+CjCidDt - Did you think a lot about death - either your own, someone else's or death in general?
+
+Before calculating CIDI diagnoses I have to change coding to 0 = no, 1 = yes. For the weight change question, do I include "both gained and lost some weight" as a yes to the weight symptom? It's excluded currently.
+
+```{r}
+cidi = sw10 %>% select(grep("IDNumber|CjCid", names(.)))
+missingif = c(-9:-1)
+
+cidi = cidi %>% mutate(across(.cols = names(cidi)[-1], ~ifelse(. %in% missingif, NA, . -1 ))) #the . -1 subtracts 1 from each, making it 0 = no, 1 = yes, and making the other variables start 0, 1, 2, 3 etc
+
+# change coding of binary questions to 0 = no, 1 = yes
+bin_symptoms = c("CjCidDp", "CjCidWp", "CjCidLe", "CjCidSc", "CjCidCo", "CjCidDo", "CjCidDt")
+cidi = cidi %>% mutate(across(.cols = bin_symptoms, ~ 1 -.))
+
+# code binary weight change and core depression symptom not explained by loss/trauma, all/most of the day, every day/almost every day
+cidi = cidi %>% mutate(
+  weightchange = ifelse(CjCidWe<2, 1, 0),
+  core = ifelse(CjCidDp==1 & CjCidWp==0 &
+                  CjCidFl<2 & CjCidDa<2, 1, 0)
+)
+
+cidi$secondary = rowSums(cidi[,c("CjCidLe", "weightchange", "CjCidSc", "CjCidDo", "CjCidDt")])
+
+cidi$depression = ifelse(cidi$core == 1 &
+                         cidi$secondary>3, 1, 0) # at least 4 secondary symptoms
+
+cidi = cidi %>% mutate(
+  CjCidFl = case_match(CjCidFl, 0 ~ "All day", 1 ~ "Most of the day", 2 ~ "About half the day", 3~"Less than half the day"),
+  CjCidDa = case_match(CjCidDa, 0 ~ "Every day", 1 ~ "Almost every day", 2 ~ "Less often"),
+  CjCidWe = case_match(CjCidWe, 0 ~ "Gained weight", 1 ~ "Lost weight", 2 ~ "Both gained and lost weight", 3 ~ "Stayed the same or was on a diet")
+)
+
+cidi = cidi %>% select(IDNumber, depression, CjCidDp, CjCidWp, CjCidFl, CjCidDa, CjCidWe)
+cidi = cidi %>% mutate(across(2:ncol(cidi), ~as.factor(.)))
+```
+
+```{r}
+gad = sw10 %>% select(grep("IDNumber|CjGad", names(.)))
+
+missingif = c(-9:0)
+
+gad = gad %>% mutate(across(.cols = names(gad)[-1], ~ifelse(. %in% missingif, NA,.-1)))
+gad$gad_sum = rowSums(gad[,2:8])
+
+hist(gad$gad_sum, na.rm=T)
+
+gad$gad_severity = ifelse(gad$gad_sum>15, "severe", ifelse(gad$gad_sum>10, "moderate", ifelse(gad$gad_sum>5, "mild", "none"))) %>% as.factor()
+gad = gad %>% select(IDNumber, gad_sum, gad_severity)
+```
+
+```{r}
+dfs = list(sdq, cidi, gad)
+
+sw10_dx = dfs %>% reduce(left_join, by = "IDNumber")
+
+names(sw10_dx)[1] = "Idnumber" # match with previous sweeps for easier merging
+
+saveRDS(sw10_dx, "G://users/eileen/Food_Ins/DATA/sw10_dx.rds")
+
+sumtable = sw10_dx %>% summarise(
+  N = n(),
+  Emot_M = mean(C_emot, na.rm = T),
+  Emot_SD = sd(C_emot, na.rm = T),
+  Conduct_M = mean(C_conduct, na.rm=T),
+  Conduct_SD = sd(C_conduct, na.rm=T),
+  Hyper_M = mean(C_hyper, na.rm=T),
+  Hyper_SD = sd(C_hyper, na.rm=T),
+  Peer_M = mean(C_peer, na.rm=T),
+  Peer_SD = sd(C_peer, na.rm=T),
+  CIDI_dep = sum(depression==1, na.rm=T),
+  CIDI_perc = sum(depression==1, na.rm=T)/sum(!is.na(depression))*100,
+  GAD_M = mean(gad_sum, na.rm=T),
+  GAD_sd = sd(gad_sum, na.rm=T),
+  GAD_none = sum(gad_severity=="none", na.rm=T),
+  GAD_mild = sum(gad_severity=="mild", na.rm=T),
+  GAD_moderate = sum(gad_severity=="moderate", na.rm=T),
+  GAD_severe = sum(gad_severity=="severe", na.rm=T)
+)
+
+kbl(t(sumtable), digits = 2) %>%
+  kable_styling(full_width = F)
+```
+
+## Teacher-reported SDQ in primary 6 (sweep 8)
+
+```{r}
+teach = read.delim("G://data/GUS/8366-P6-Survey/tab/gus_bc1_p6_teacher_protect.tab") %>% select(grep("Idnumber|SDQ|ThWTbrth", names(.)))
+
+missingif = c(-9:-1)
+teach = teach %>% mutate(
+  across(names(teach)[-1], ~ifelse(. %in% missingif, NA,.-1)))
+
+## all teacher-reported questions are recoded so 0 = not true, 1 = somewhat true, 2 = certainly true
+```
+
+```{r}
+emot = c("Idnumber", "ThSDQ03", "ThSDQ08", "ThSDQ13", "ThSDQ16", "ThSDQ24")
+
+sdq_e = teach %>% select(emot)
+sdq_e$missing = apply(sdq_e, 1, function(x) sum(is.na(x)))
+sdq_e$T_emot = ifelse(sdq_e$missing<3, rowMeans(sdq_e[,2:6])*5, NA)
+```
+
+```{r}
+cond = c("Idnumber", "ThSDQ05", "ThSDQ07", "ThSDQ12", "ThSDQ18", "ThSDQ22")
+
+sdq_c = teach %>% select(cond)
+sdq_c$ThSDQ07 = 2 - sdq_c$ThSDQ07 #item is reverse coded
+sdq_c$missing = apply(sdq_c, 1, function(x) sum(is.na(x)))
+sdq_c$T_conduct = ifelse(sdq_c$missing<3, rowMeans(sdq_c[,2:6])*5, NA)
+```
+
+```{r}
+hyper = c("Idnumber", "ThSDQ02", "ThSDQ10", "ThSDQ15", "ThSDQ21", "ThSDQ25")
+
+sdq_h = teach %>% select(hyper)
+sdq_h = sdq_h %>% mutate(
+  ThSDQ21 = 2 - ThSDQ21,
+  ThSDQ25 = 2 - ThSDQ25
+)
+sdq_h$missing = apply(sdq_h, 1, function(x) sum(is.na(x)))
+sdq_h$T_hyper = ifelse(sdq_h$missing<3, rowMeans(sdq_h[,2:6])*5, NA)
+```
+
+```{r}
+peer = c("Idnumber", "ThSDQ06", "ThSDQ11", "ThSDQ14", "ThSDQ19", "ThSDQ23", "ThWTbrth")
+
+sdq_p = teach %>% select(peer)
+sdq_p = sdq_p %>% mutate(
+  ThSDQ11 = 2 - ThSDQ11,
+  ThSDQ14 = 2 - ThSDQ14
+)
+sdq_p$missing = apply(sdq_p, 1, function(x) sum(is.na(x)))
+sdq_p$T_peer = ifelse(sdq_p$missing<3, rowMeans(sdq_p[,2:6])*5, NA)
+```
+
+```{r}
+scales = list(sdq_c, sdq_e, sdq_h, sdq_p)
+sdq = scales %>% reduce(left_join, by='Idnumber') %>% select(Idnumber, T_emot, T_conduct, T_hyper, T_peer, ThWTbrth)
+
+rm(sdq_c, sdq_e, sdq_h, sdq_p)
+
+saveRDS(sdq, "G://users/eileen/Food_Ins/DATA/sdq_teacher.rds")
+```
+
+
+
+```{r eval=FALSE}
+#merge in sw10 weights to main sample
+sw10 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_bc1sw10_protect.tab") %>% select("IDNumber", "Djwtbth2a")
+
+colnames(sw10)[1] = "Idnumber"
+sw10 = sw10[complete.cases(sw10[,"Djwtbth2a"]),]
+```
+
+```{r eval=FALSE}
+dat_wide = readRDS("G://users/eileen/Food_Ins/DATA/GUS_wide.rds")
+wt_wide = merge(sw10, dat_wide, by = "Idnumber")
+
+sdq = c("HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1")
+
+wt_long = wt_wide %>% pivot_longer(
+  cols = grep(paste0(sdq), names(.), ignore.case = T),
+  cols_vary = "slowest",
+  names_to = c("sweep", ".value"),
+  names_pattern = "(^D[efghij])(HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1)"
+)
+##For consistent sample size, restrict sample to those with complete SDQ data (listwise deletion of missing rows - i.e. if they missed a timepoint they can still be included), food insecurity data and covariate data (DeEqv5, DeSf12mn, ALeSNim2)
+completecols = c("MeFaff04", "DeEqv5", "ALeSNim2", "Dsdem1", "Dsdco1", "Dsdhy1", "Dsdpr1", "Dsdto1")
+
+wt_long = wt_long[complete.cases(wt_long[, completecols]),]
+wt_long$Age = wt_long$HGagC/12 #change age into years
+
+#mean centre age
+wt_long$age.cent = wt_long$Age - mean(wt_long$Age, na.rm = T)
+
+saveRDS(wt_long, "G://users/eileen/Food_Ins/DATA/wt_GUS_long.rds")
+```
+
+```{r}
+dat_social = readRDS("G://users/eileen/Food_Ins/DATA/GUS_social_wide.rds")
+wt_social = merge(sw10, dat_social, by = "Idnumber")
+
+sdq = c("HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1")
+
+long_social = wt_social %>% pivot_longer(
+  cols = grep(paste0(sdq), names(.), ignore.case = T),
+  cols_vary = "slowest",
+  names_to = c("sweep", ".value"),
+  names_pattern = "(^D[efghij])(HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1)"
+)
+##For consistent sample size, restrict sample to those with complete SDQ data (listwise deletion of missing rows - i.e. if they missed a timepoint they can still be included), food insecurity data and covariate data (DeEqv5, DeSf12mn, ALeSNim2)
+completecols = c("MeFaff04", "DeEqv5", "ALeSNim2", "Dsdem1", "Dsdco1", "Dsdhy1", "Dsdpr1", "Dsdto1", "food_help")
+
+long_social = long_social[complete.cases(long_social[, completecols]),]
+long_social$Age = long_social$HGagC/12 #change age into years
+
+#mean centre age
+long_social$age.cent = long_social$Age - mean(long_social$Age, na.rm = T)
+
+saveRDS(long_social, "G://users/eileen/Food_Ins/DATA/wt_GUS_social.rds")
+saveRDS(wt_social, "G://users/eileen/Food_Ins/DATA/wt_GUS_social_wide.rds")
+```
+
