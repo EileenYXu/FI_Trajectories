@@ -1,20 +1,19 @@
-#packages
+#### Preparing GUS data for trajectory models ####
+
+#### packages
 library(tidyverse)
 
+## variable names to extract at each sweep
 vars = c("IDNumber|HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1")
 
-#------------------ sweep 5 demographics ----------------
+#### Sweep 5 data ####
+sw5 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw5_b_protect.tab") %>%
+  select(grep(paste0(vars, "|HGsx1$|MeFaff04|DeMedu03|DeYedu03|DeEqv5|AleSNim2|DeHGbord|DeSf12mn|DeMsta01|DeMeth07"), names(.), ignore.case = TRUE))
 
-sw5 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw5_b_protect.tab")
-
-sw5 = sw5 %>% select(grep(paste0(vars, "|HGsx1$|MeFaff04|DeMedu03|DeYedu03|DeEqv5|AleSNim2|DeHGbord|DeSf12mn|DeMsta01|DeMeth07"), 
-                          names(.), ignore.case = TRUE))
+## code NAs, organise factor levels
 na_strings = c(-1:-9)
 sw5 = sw5 %>% naniar::replace_with_na_all(condition = ~.x %in% na_strings)
-
-#------------- recoding levels ----------------
 sw5 = sw5 %>% mutate(
-  
   HighEd = ifelse(as.numeric(DeMedu03)>=as.numeric(DeYedu03), 
                   DeMedu03, DeYedu03) %>% 
     factor(labels = c("No qualification", "Other", "GCSEs", 
@@ -71,40 +70,69 @@ saveRDS(sw5, "G://users/eileen/Food_Ins/DATA/sw5_demog.rds")
 # for analysis, remove columns with descriptive factor levels
 sw5 = sw5 %>% select(-c(MatEdu, PtnrEdu, EqvIncome, MatEmploy, MatEthnicity))
 
-#-------------------- sweeps 6-10 ----------------
+# how many individuals are missing FI or covariates?
 
-sw6 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw6_b_protect.tab")
-sw6 = sw6 %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
+completecols = c("MeFaff04","MeHGsx1", "DeEqv5", "ALeSNim2", "DeSf12mn")
+table(complete.cases(sw5[,completecols]))
 
-sw7 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw7_b_oct2020_protect.tab")
-sw7 = sw7 %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
 
-sw8 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw8_b_protect.tab")
-sw8 = sw8 %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
+#### Sweeps 6-10 SDQ ####
 
-sw9 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw9_protect.tab")
-sw9 = sw9 %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
+sw6 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw6_b_protect.tab") %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
 
-sw10 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_bc1sw10_protect.tab")
-sw10 = sw10 %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
+sw7 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw7_b_oct2020_protect.tab") %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
 
-#Rename columns to merge into wide dataset
+sw8 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw8_b_protect.tab") %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
+
+sw9 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw9_protect.tab") %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
+
+#make sure to read in sweep 10 longitudinal weights
+sw10 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_bc1sw10_protect.tab") %>% select(grep(paste0(vars,"|Djwtbth2a"), names(.), ignore.case = TRUE))
+
+
+#### Merge SDQ data into wide dataset ####
 names(sw9)[1] = "Idnumber"
-names(sw10) = c("Idnumber", "DjHGagC", "DjDsdem1", "DjDsdco1", "DjDsdhy1", "DjDsdpr1", "DjDsdps1", "DjDsdto1")
-dfs = list(sw5, sw6, sw7, sw8, sw9, sw10)
-dat_wide = dfs %>% reduce(left_join, by='Idnumber')
+names(sw10) = c("Idnumber", "DjHGagC", "DjDsdem1", "DjDsdco1", "DjDsdhy1", "DjDsdpr1", "DjDsdps1", "DjDsdto1", "Djwtbth2a")
+
+# first merge sweeps 5 - 8 which have all the SDQ data but no boost sample
+sdq = list(sw5[complete.cases(sw5[,completecols]),], sw6, sw7, sw8) %>% reduce(left_join, by='Idnumber')
+
+# now merge in sweep 9 and 10 data, dropping unmatched rows from boost sample
+dat_wide = list(sdq, sw9, sw10) %>% reduce(left_join, by ="Idnumber", unmatched = "drop")
 
 na_strings = c(-1:-9)
 dat_wide = dat_wide %>% naniar::replace_with_na_all(condition = ~.x %in% na_strings)
 dat_wide = droplevels(dat_wide)
+
+
+#### sweep 4 social support ####
+
+sw4 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw4_b_nov11_protect.tab") %>% select(grep("Idnumber|MdSNsp01", names(.), ignore.case = T))
+
+sw4 = sw4 %>% mutate(across(c(MdSNsp01), ~na_if(., -1)),
+                     MdSNsp01 = factor(MdSNsp01, labels = c("Enough", "Not enough", "None", "Don't need any")) %>% relevel(ref = "Enough"),
+                     help_bin = case_when(
+                       MdSNsp01=="Enough" ~ "Enough",
+                       MdSNsp01=="Don't need any" ~ NA,
+                       .default = "Not enough") %>% as.factor() %>% relevel("Enough")
+)
+
+dat_wide = merge(dat_wide, sw4, by = "Idnumber", all.x = T, all.y = F)
+
+dat_wide = dat_wide %>% mutate(
+  food_help = case_when(
+    is.na(help_bin)==T ~ NA,
+    .default = paste(MeFaff3lvl, help_bin, sep = ".")
+  ) %>% as.factor() %>%
+    relevel(ref = "Not at all.Enough")
+)
 
 ##Save wide
 write.csv(dat_wide, "G://users/eileen/Food_Ins/DATA/GUS_wide.csv")
 saveRDS(dat_wide, "G://users/eileen/Food_Ins/DATA/GUS_wide.rds")
 
 
-##Make long SDQ scores
-dat_wide = readRDS("G://users/eileen/Food_Ins/DATA/GUS_wide.rds")
+#### Wide to long ####
 
 sdq = c("HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1")
 
@@ -115,10 +143,6 @@ dat_long = dat_wide %>% pivot_longer(
   names_pattern = "(^D[efghij])(HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1)"
 )
 
-##For consistent sample size, restrict sample to those with complete SDQ data (listwise deletion of missing rows - i.e. if they missed a timepoint they can still be included), food insecurity data and covariate data (DeEqv5, DeSf12mn, ALeSNim2)
-completecols = c("MeFaff04", "DeEqv5", "ALeSNim2", "Dsdem1", "Dsdco1", "Dsdhy1", "Dsdpr1", "Dsdto1")
-
-dat_long = dat_long[complete.cases(dat_long[, completecols]),]
 dat_long$Age = dat_long$HGagC/12 #change age into years
 
 #mean centre age
