@@ -30,7 +30,7 @@ fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + (1 + age.ce
 age_vals_c = c(mean(dat[dat$sweep == "De",]$Age, na.rm = T), 
                mean(dat[dat$sweep == "Dg",]$Age, na.rm = T), 
                mean(dat[dat$sweep == "Dj",]$Age, na.rm = T))
-age_cent_c = age_vals_c - mean(dat$Age, na.rm = T))
+age_cent_c = age_vals_c - mean(dat$Age, na.rm = T)
 ages_c = data.frame(age_vals_c, age_cent_c)
 at_vals_c = list(age.cent = age_cent_c, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2))
 
