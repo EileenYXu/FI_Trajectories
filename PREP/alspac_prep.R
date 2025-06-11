@@ -208,8 +208,15 @@ dim(final_alspac)
 names(final_alspac)
 glimpse(final_alspac)
 
+final_alspac %>% select(grep("in_", names(.))) %>% summary()
+final_alspac %>% select(grep("in_", names(.))) %>% head()
 
-## save final dataset? hopefully alls good
+## save weights
+
+saveRDS(alspac_weighted, file="estimated_alspac_weights.rds")
+
+## save final dataset? 
+head(final_alspac)
 
 saveRDS(final_alspac, file="alspac_weighted.rds")
 
@@ -218,8 +225,6 @@ saveRDS(final_alspac, file="alspac_weighted.rds")
 # make new column names for long columns
 
 dat = readRDS("alspac_weighted.rds")
-
-head(final_alspac)
 
 dat = dat |> 
   rename_with(
@@ -245,10 +250,14 @@ dat = dat |>
   rename_with(
     .cols = all_of(prosoc),
     ~paste0(
-      str_extract(.x, pattern = "^[:alpha:]{2}"),"_prosoc"))
+      str_extract(.x, pattern = "^[:alpha:]{2}"),"_prosoc")) |> 
+  rename_with(
+    .cols = all_of(grep("ipw_in_", names(dat))),
+    ~paste0(
+      str_extract(.x, pattern = "[:alpha:]{2}$"),"_ipw"))
 
 dat.long = dat |> 
-  pivot_longer(cols = kq_prosoc:tc_age, names_sep = "_",
+  pivot_longer(cols = grep(pattern = "^kq_|^ku_|^kw_|^ta_|^tc_", names(dat)), names_sep = "_",
                names_to = c("sweep", ".value"))
 
 ##For consistent sample size, restrict sample to those with complete SDQ data (listwise deletion of missing rows - i.e. if they missed a timepoint they can still be included), food insecurity data and covariate data

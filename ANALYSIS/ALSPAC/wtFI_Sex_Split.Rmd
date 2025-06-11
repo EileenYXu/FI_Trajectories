@@ -29,54 +29,7 @@ ALeSNim2 - SIMD quintiles\
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
-```
-
-```{r load packages}
-library(lme4)
-library(lmerTest)
-library(kableExtra)
-library(tidyverse)
-library(emmeans)
-emm_options(lmerTest.limit = 20000, pbkrtest.limit = 20000)
-```
-
-```{r}
-# function to print any singular fit and convergence issues warning messages.
-check_fit <- function(m) {
-  msg = summary(m)$optinfo$conv$lme4$messages %>% unlist()
-  if (any(grepl("isSingular", msg))==T) {
-    print("Singular fit")
-  } else {print("No singular fit")}
-  
-  if (any(grepl("failed to converge", msg))==T) {
-    print("Failed to converge")
-  } else  {print("No convergence issues")}
-  } 
-```
-
-```{r ggplot theme}
-pal = c("#E69F00","#56B4E9","#009E73",
-        "#F5C710","#0072B2","#D55E00",
-        "#CC79A7","#999999","#000000")
-
-# Set default ggplot colour palette to colourblind-friendly Okabe Ito (2008)
-options(ggplot2.discrete.colour=pal, ggplot2.discrete.fill=pal)
-
-# Set global theme for ggplot
-my_theme <- function(base_size = 12, base_family = ""){
-  theme_bw(base_size = base_size, base_family = base_family) %+replace%
-    theme(
-      panel.background = element_rect(fill = "transparent"),
-      plot.background = element_rect(fill = "transparent", color = NA),
-      panel.grid.major = element_line(colour = "grey88"),
-      panel.grid.minor = element_line(colour = "grey99"),
-      legend.background = element_rect(fill = "transparent"),
-      legend.box.background = element_rect(fill = "transparent"),
-      panel.ontop = FALSE
-    )
-}
-
-theme_set(my_theme())
+source("ANALYSIS/global.R")
 ```
 
 # SDQ Trajectories in GUS following food insecurity - trajectories split by sex
