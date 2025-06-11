@@ -43,7 +43,7 @@ make_misscols <- function(df, var_cols, new_names) {
 }
 
 
-### function to make weights from multiply imputed dataset
+### function to make weights from multiply imputed dataset ----
 # outcome = vector of attendance at each sweep to make weights for
 # preds = vector of predictors to use 
 # idcol = column with ppt IDs
@@ -53,11 +53,25 @@ make_wt = function(mids.df, outcome, preds, idcol) {
   sweep_prob = c()
   
   for (i in seq_along(outcome)) {
-    rhs = paste(preds, collapse = " + ")
-    form = paste0(outcome[i]," ~ ", rhs) 
     
-    # logistic regression predicting attendance
-    fit = with(mids.df, glm(formula = as.formula(form), family = binomial))
+    if (i==1) {
+      
+      #the first iteration doesn't add weight from the previous sweep
+      rhs = paste(preds, collapse = " + ")  
+      form = paste0(outcome[i]," ~ ", rhs) 
+    
+      #logistic regression predicting attendance
+      fit = with(mids.df, glm(formula = as.formula(form), family = binomial))
+      
+    } else {
+      
+      #add weight from previous sweep
+      wt = paste0("ipw_", outcome[i-1])
+      rhs = paste(c(preds, wt), collapse = " + ")
+      
+      #specify to use new imputed data with the ipw
+      fit = with(mids.df.ipw, glm(formula = as.formula(form), family = binomial))
+    }
     
     # get predicted probabilities in each imputed dataset
     probs = lapply(fit$analyses, function(mod) predict(mod, type = "response"))
@@ -70,9 +84,13 @@ make_wt = function(mids.df, outcome, preds, idcol) {
     marginal_prob = mean(mids.df$data[[outcome[i]]])
     ipw_stable = ipw*marginal_prob
     
-    # save to output
+    # save to output df
     weights_df[[paste0("prob_", outcome[i])]] = prob_pooled
     weights_df[[paste0("ipw_", outcome[i])]] = ipw_stable
+    
+    # save ipw_stable to mids.df
+    
+    mids.df.ipw = cbind(mids.df, weights_df[[paste0("ipw_", outcome[i])]])
     
     sweep_prob[[outcome[i]]] = marginal_prob
   } 
