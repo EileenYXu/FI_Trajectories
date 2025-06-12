@@ -155,7 +155,11 @@ fit_lmer <- function(dat, outcome, age, covs = NULL, id, wt = NULL, modType) {
 plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
 
   # extract centred age from formula
+<<<<<<< HEAD
   agevar <- str_extract(obj$formula, pattern = "(?<=\\d{1}\\s{1}\\+\\s{1}).*(?=\\s{1}\\|)")
+=======
+  agevar <- str_extract(conduct_fit$formula, pattern = "(?<=\\d{1}\\s{1}\\+\\s{1}).*(?=\\s{1}\\|)")
+>>>>>>> 929a3dc2acf1e22de25b93314d3ccd65b0b9f147
 
   # extract outcome from formula
   outcome <- str_extract(obj$formula, pattern = ".*(?=\\s{1}\\~)")
