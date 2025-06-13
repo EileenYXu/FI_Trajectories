@@ -265,8 +265,14 @@ completecols = c("age", "conduct", "emot", "hyper", "peer", "prosoc")
 dat.long = dat.long[complete.cases(dat.long[, completecols]),]
 dat.long$Age = dat.long$age/12 #change age into years
 
-#mean centre age
-dat.long$age.cent = dat.long$Age - mean(dat.long$Age)
+#mean centre age and make FI
+dat.long = dat.long |> mutate(
+  age.cent = Age - mean(Age),
+  foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
+                        foodDiff == "Slightly" ~ "Slightly",
+                        foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
+    fct_relevel("Not difficult")
+)
 
 write.csv(dat.long, "/exports/igmm/datastore/GenScotDepression/users/eileen/Food_Ins/DATA/ALSPAC_long.csv")
 saveRDS(dat.long, "/exports/igmm/datastore/GenScotDepression/users/eileen/Food_Ins/DATA/ALSPAC_long.rds")

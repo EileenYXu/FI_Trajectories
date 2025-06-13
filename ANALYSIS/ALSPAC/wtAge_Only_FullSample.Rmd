@@ -29,7 +29,7 @@ Optionally, dat can include sample weights too.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
-source("ANALYSIS/global.R")
+source("C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/ANALYSIS/global.R")
 ```
 
 # Full sample {.tabset}
@@ -155,6 +155,7 @@ emmeans.plot
 
 ```{r subset male}
 dat.m = dat %>% filter(sex == "Male")
+dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
 ```
 
 ## Conduct problems
@@ -257,6 +258,7 @@ emmeans.plot
 
 ```{r}
 dat.f = dat %>% filter(sex == "Female")
+dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
 ```
 
 ## Conduct problems

@@ -9,24 +9,22 @@ output:
 
 Fitting models of SDQ trajectories with food insecurity at age 5 as a 3-level factor. The polynomial terms included here may need to be edited depending on what best fits the data.\
 
-
 Input data (dat) should be in long format, with the following variables (at minimum):\
 
-Idnumber - participant ID\
-sweep - identifier for each timepoint\
-Age - age\
-age.cent - mean-centred age (helpful for reducing convergence issues)\
-Sex - sex (could be sex at birth, could be gender identity - in this analysis it's a binary measure)\
-Dsdco1 - SDQ conduct problems score\
-Dsdem1 - SDQ emotional problems score\
-Dsdhy1 - SDQ hyperactivity score\
-Dsdpr1 - SDQ peer problems score\
-Djwtbth2a - sample weight (delete the 'weights = Djwtbth2a,' line for each model if not using weights)\
-MeFaff3lvl - 3-level food insecurity measure\
-DeEqv5 - household income quintiles, adjusted for household composition (see GUS documentation deriving this)\
-DeSf12mn - continuous maternal mental health score from SF-12\
-ALeSNim2 - SIMD qunitiles\
-
+Participant ID\
+Identifier for each timepoint\
+Age (in years)\
+Mean-centred age (helpful for reducing convergence issues)\
+Sex (could be sex at birth, could be gender identity - in this analysis it's a binary measure)\
+SDQ conduct problems score\
+SDQ emotional problems score\
+SDQ hyperactivity score\
+SDQ peer problems score\
+Sample weight (delete the 'wt = ,' argument if not using weights)\
+3-level food insecurity measure\
+Household income\
+Maternal MH score (continuous)\
+IMD quintiles\
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
@@ -34,901 +32,376 @@ source("ANALYSIS/global.R")
 ```
 
 ```{r read data}
-dat = readRDS("G://users/eileen/Food_Ins/DATA/wt_GUS_long.rds")
+dat = readRDS("G://users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
 
-age_vals = seq(min(dat$Age), max(dat$Age), 0.5) #list of ages to make scores for
+## miscellaneous setup
+
+dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") #highest income as ref
+dat$IMD = factor(dat$IMD, ordered=FALSE) |> relevel(ref = "1") #least deprived as ref
+
+## setup for emmeans
+age_vals = seq(round(min(dat$Age)), round(max(dat$Age)), 0.5) #list of ages to make scores for
 age_cent = age_vals - mean(dat$Age, na.rm = T) #mean center to fit with the model
-at_vals = list(age.cent = age_cent, DeEqv5 = levels(dat$DeEqv5), Sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2)) #list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
+emm_at = list(age.cent = age_cent, income = levels(dat$income), sex = levels(dat$sex), IMD = levels(dat$IMD)) #list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
+
+## setup for model covariates
+# 4 covariate structures
+covars = list(NULL, c("sex", "income"), c("sex", "income", "epds"), c("sex", "income", "epds", "IMD"))
+# column with model covariates
+modcovs = data.frame("covars" = covars |> map_chr(\(x) paste(x, collapse = "+")))
+
+results.fitstats = list()
+results.est = list()
+emm.list = list()
 ```
 
-## Conduct problems {.tabset}
-
-### Summary by sweep
+# Conduct problems {.tabset}
 
 ```{r}
-sumtable = dat %>% group_by(across(sweep)) %>%
-          summarise(N = sum(!is.na(Dsdco1)),
-                    mean = mean(Dsdco1, na.rm = T),
-                    SD = sd(Dsdco1, na.rm = T),
-                    median = median(Dsdco1, na.rm = T),
-                    IQR = IQR(Dsdco1, na.rm = T)
-          )
+conductfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="conduct", age = "age.cent",
+                  id = "ID", wt = dat$ipw, modType = "cubic",
+                  grp = "foodDiff3", covs = x))
 
-kbl(sumtable) %>%
-  kable_styling(full_width = F)
+# extract fit statistics
+results.fitstats[["conduct"]] = conductfits |> 
+  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
 
-# make dataframe for adding original data as a layer to trajectory plots
-df.plot = dat %>%
-          group_by(across(sweep)) %>%
-          summarise(Age = mean(Age, na.rm = T),
-                    Phenotype = mean(Dsdco1, na.rm = T),
-                    SD = sd(Dsdco1, na.rm = T),
-                    n = sum(!is.na(Dsdco1))) %>%
-          mutate(upper = Phenotype + ( qnorm(0.975)*SD/sqrt(n) ),
-                 lower = Phenotype - ( qnorm(0.975)*SD/sqrt(n) ))
+results.est[["conduct"]] = conductfits |> 
+  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
 ```
 
-### No covariates {.tabset}
-
-#### Model
+## No covariates
 
 ```{r results='asis'}
-fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
+sjPlot::tab_model(conductfits[[1]]$fit)
+print(conductfits[[1]]$diagnostics)
 
-#### Plot
+plotdat = plot_dfs(dat = dat, obj = conductfits[[1]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
 
-```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = pred %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Conduct")
 
 emmeans.plot
 ```
 
-### Covariates sex and income {.tabset}
-
-#### Model
+## Covariates sex and income 
 
 ```{r results='asis'}
-fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
+sjPlot::tab_model(conductfits[[2]]$fit)
+print(conductfits[[2]]$diagnostics)
 ```
 
-#### Plot
+## Covariates sex, income, maternal MH
 
 ```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
+sjPlot::tab_model(conductfits[[3]]$fit)
+print(conductfits[[3]]$diagnostics)
+```
 
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() +
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+```{r results='asis'}
+sjPlot::tab_model(conductfits[[4]]$fit)
+print(conductfits[[4]]$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = conductfits[[4]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
+
+emm.list[["conduct"]] = plotdat$emm
+
+pred.low = list(raw.df = plotdat$raw.df, 
+                pred.df = plotdat$pred.df |>
+                  filter(IMD=="5"&income=="<100"))
+pred.hi = list(raw.df = plotdat$raw.df, 
+               pred.df = plotdat$pred.df |>
+                 filter(IMD=="1"&income==">400"))
+```
+
+### Lowest level covariates
+
+```{r results='asis'}
+emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Conduct")
 
-emmeans.plot + facet_grid(~ Sex)
+emmeans.plot + facet_wrap(~sex)
 ```
 
-### Covariates sex, income, maternal MH {.tabset}
-
-#### Model
+### Highest level covariates
 
 ```{r results='asis'}
-fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Plot
-
-```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Conduct")
 
-emmeans.plot + facet_grid(~ Sex)
+emmeans.plot + facet_wrap(~sex)
 ```
 
-
-### Covariates sex, income, maternal MH, SIMD {.tabset}
-
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdco1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-
-#### Lowest level covariates
-
-```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + Sex + DeEqv5 + ALeSNim2 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1", ALeSNim2 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Conduct") + 
-  ggtitle("Lowest income and SIMD")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-
-#### Highest level covariates
-
-```{r results='asis'}
-emmeans.plot = pred %>% filter(DeEqv5 == "5", ALeSNim2 == "5") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Conduct") + 
-  ggtitle("Highest income and SIMD")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-## Emotional problems {.tabset}
-
-### Summary by sweep
+# Emotional problems {.tabset}
 
 ```{r}
-sumtable = dat %>% group_by(across(sweep)) %>%
-          summarise(N = sum(!is.na(Dsdem1)),
-                    mean = mean(Dsdem1, na.rm = T),
-                    SD = sd(Dsdem1, na.rm = T),
-                    median = median(Dsdem1, na.rm = T),
-                    IQR = IQR(Dsdem1, na.rm = T)
-          )
+emotfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="emot", age = "age.cent",
+                  id = "ID", wt = dat$ipw, modType = "cubic",
+                  grp = "foodDiff3", covs = x))
 
-kbl(sumtable) %>%
-  kable_styling(full_width = F)
+# extract fit statistics
+results.fitstats[["emot"]] = emotfits |> 
+  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
 
-# make dataframe for adding original data as a layer to trajectory plots
-df.plot = dat %>%
-          group_by(across(sweep)) %>%
-          summarise(Age = mean(Age, na.rm = T),
-                    Phenotype = mean(Dsdem1, na.rm = T),
-                    SD = sd(Dsdem1, na.rm = T),
-                    n = sum(!is.na(Dsdem1))) %>%
-          mutate(upper = Phenotype + ( qnorm(0.975)*SD/sqrt(n) ),
-                 lower = Phenotype - ( qnorm(0.975)*SD/sqrt(n) ))
+results.est[["emot"]] = emotfits |> 
+  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
 ```
 
-### No covariates {.tabset}
-
-#### Model
-
+## No covariates 
 
 ```{r results='asis'}
-fit = lmer(Dsdem1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
+sjPlot::tab_model(emotfits[[1]]$fit)
+print(emotfits[[1]]$diagnostics)
 
-#### Plot
+plotdat = plot_dfs(dat = dat, obj = emotfits[[1]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
 
-```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = ggplot() + 
-  geom_line(data = pred,
-            aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(data = pred,
-              aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Emotional")
 
 emmeans.plot
 ```
 
-### Covariates sex and income {.tabset}
-
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdem1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Plot
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Emotional")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-### Covariates sex, income, maternal MH {.tabset}
-
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdem1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Plot
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Emotional")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-### Covariates sex, income, maternal MH, SIMD  {.tabset}
-
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdem1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Lowest level covariates
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + Sex + DeEqv5 + ALeSNim2 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1", ALeSNim2 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Emotional") + 
-  ggtitle("Lowest income and SIMD")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-#### Highest level covariate plot
-
-```{r results='asis', fig.width=10}
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "5", ALeSNim2 == "5") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Emotional") + 
-  ggtitle("Highest income and SIMD")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-## Hyperactivity {.tabset}
-
-### Summary by sweep
+## Covariates sex and income
 
 ```{r}
-sumtable = dat %>% group_by(across(sweep)) %>%
-          summarise(N = sum(!is.na(Dsdhy1)),
-                    mean = mean(Dsdhy1, na.rm = T),
-                    SD = sd(Dsdhy1, na.rm = T),
-                    median = median(Dsdhy1, na.rm = T),
-                    IQR = IQR(Dsdhy1, na.rm = T)
-          )
-
-kbl(sumtable) %>%
-  kable_styling(full_width = F)
-
-df.plot = dat %>%
-          group_by(across(sweep)) %>%
-          summarise(Age = mean(Age, na.rm = T),
-                    Phenotype = mean(Dsdhy1, na.rm = T),
-                    SD = sd(Dsdhy1, na.rm = T),
-                    n = sum(!is.na(Dsdhy1))) %>%
-          mutate(upper = Phenotype + ( qnorm(0.975)*SD/sqrt(n) ),
-                 lower = Phenotype - ( qnorm(0.975)*SD/sqrt(n) ))
+sjPlot::tab_model(emotfits[[2]]$fit)
+print(emotfits[[2]]$diagnostics)
 ```
 
-### No covariates {.tabset}
+## Covariates sex, income, maternal MH
 
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdhy1 ~ age.cent*MeFaff3lvl + 
-             (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
+```{r}
+sjPlot::tab_model(emotfits[[3]]$fit)
+print(emotfits[[3]]$diagnostics)
 ```
 
-#### Plot
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 ```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
+sjPlot::tab_model(emotfits[[4]]$fit)
+print(emotfits[[4]]$diagnostics)
 
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
+plotdat = plot_dfs(dat = dat, obj = emotfits[[4]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
 
-#plot overall model 
-emmeans.plot = pred %>% ggplot() + 
-  geom_line(
-            aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(
-              aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+emm.list[["emot"]] = plotdat$emm
+
+pred.low = list(raw.df = plotdat$raw.df, 
+                pred.df = plotdat$pred.df |>
+                  filter(IMD=="5"&income=="<100"))
+pred.hi = list(raw.df = plotdat$raw.df, 
+               pred.df = plotdat$pred.df |>
+                 filter(IMD=="1"&income==">400"))
+```
+
+### Lowest level covariates
+
+```{r results='asis'}
+emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
+  xlab("Age") + ylab("SDQ Emotional")
+
+emmeans.plot + facet_wrap(~sex)
+```
+
+### Highest level covariates
+
+```{r results='asis'}
+emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
+  xlab("Age") + ylab("SDQ Emotional")
+
+emmeans.plot + facet_wrap(~sex)
+```
+
+# Hyperactivity {.tabset}
+
+```{r}
+hyperfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="hyper", age = "age.cent",
+                  id = "ID", wt = dat$ipw, modType = "quartic",
+                  grp = "foodDiff3", covs = x))
+
+# extract fit statistics
+results.fitstats[["hyper"]] = hyperfits |> 
+  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
+
+results.est[["hyper"]] = hyperfits |> 
+  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
+```
+
+## No covariates 
+
+```{r results='asis'}
+sjPlot::tab_model(hyperfits[[1]]$fit)
+print(hyperfits[[1]]$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = hyperfits[[1]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
+
+emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Hyperactivity")
 
 emmeans.plot
 ```
 
-### Covariates sex and income {.tabset}
-
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdhy1 ~ age.cent*MeFaff3lvl +
-             Sex + DeEqv5 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Plot
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + 
-                Sex + DeEqv5, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Hyperactivity")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-### Covariates sex, income, maternal MH {.tabset}
-
-#### Model
-
-
-```{r results='asis'}
-fit = lmer(Dsdhy1 ~ age.cent*MeFaff3lvl + 
-             Sex + DeEqv5 + scale(DeSf12mn) + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Plot
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + 
-                Sex + DeEqv5 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-
-#plot overall model 
-emmeans.plot =  pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Hyperactivity")
-
-emmeans.plot + facet_grid(~ Sex)
-```
-
-### Covariates sex, income, maternal MH, SIMD  {.tabset}
-
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdhy1 ~ age.cent*MeFaff3lvl + 
-             Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-
-#### Lowest level covariates
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl +
-                Sex + DeEqv5 + ALeSNim2 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-low.plot = pred %>% filter(DeEqv5 == "1", ALeSNim2 == "1") %>% ggplot() + 
-  geom_line(
-            aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(
-              aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Hyperactivity") + 
-  ggtitle("Lowest income and SIMD")
-
-low.plot + facet_grid(~ Sex)
-```
-
-#### Highest level covariates plot
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl +
-                Sex + DeEqv5 + ALeSNim2 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-high.plot = pred %>% filter(DeEqv5 == "5", ALeSNim2 == "5") %>% ggplot() + 
-  geom_line(
-            aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(
-              aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Hyperactivity") + 
-  ggtitle("Highest income and SIMD")
-
-high.plot + facet_grid(~ Sex)
-```
-
-## Peer Problems {.tabset}
-
-### Summary by sweep
+## Covariates sex and income
 
 ```{r}
-sumtable = dat %>% group_by(across(sweep)) %>%
-          summarise(N = sum(!is.na(Dsdpr1)),
-                    mean = mean(Dsdpr1, na.rm = T),
-                    SD = sd(Dsdpr1, na.rm = T),
-                    median = median(Dsdpr1, na.rm = T),
-                    IQR = IQR(Dsdpr1, na.rm = T)
-          )
-
-kbl(sumtable) %>%
-  kable_styling(full_width = F)
-
-df.plot = dat %>%
-          group_by(across(sweep)) %>%
-          summarise(Age = mean(Age, na.rm = T),
-                    Phenotype = mean(Dsdpr1, na.rm = T),
-                    SD = sd(Dsdpr1, na.rm = T),
-                    n = sum(!is.na(Dsdpr1))) %>%
-          mutate(upper = Phenotype + ( qnorm(0.975)*SD/sqrt(n) ),
-                 lower = Phenotype - ( qnorm(0.975)*SD/sqrt(n) ))
+sjPlot::tab_model(hyperfits[[2]]$fit)
+print(hyperfits[[2]]$diagnostics)
 ```
 
-### No covariates {.tabset}
+## Covariates sex, income, maternal MH
 
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdpr1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
+```{r}
+sjPlot::tab_model(hyperfits[[3]]$fit)
+print(hyperfits[[3]]$diagnostics)
 ```
 
-#### Plot
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 ```{r results='asis'}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
+sjPlot::tab_model(hyperfits[[4]]$fit)
+print(hyperfits[[4]]$diagnostics)
 
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
+plotdat = plot_dfs(dat = dat, obj = hyperfits[[4]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
 
-#plot overall model 
-emmeans.plot = ggplot() + 
-  geom_line(data = pred,
-            aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(data = pred,
-              aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+emm.list[["hyper"]] = plotdat$emm
+
+pred.low = list(raw.df = plotdat$raw.df, 
+                pred.df = plotdat$pred.df |>
+                  filter(IMD=="5"&income=="<100"))
+pred.hi = list(raw.df = plotdat$raw.df, 
+               pred.df = plotdat$pred.df |>
+                 filter(IMD=="1"&income==">400"))
+```
+
+### Lowest level covariates
+
+```{r results='asis'}
+emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
+  xlab("Age") + ylab("SDQ Hyperactivity")
+
+emmeans.plot + facet_wrap(~sex)
+```
+
+### Highest level covariates
+
+```{r results='asis'}
+emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
+  xlab("Age") + ylab("SDQ Hyperactivity")
+
+emmeans.plot + facet_wrap(~sex)
+```
+
+# Peer Problems {.tabset}
+
+```{r}
+peerfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="peer", age = "age.cent",
+                  id = "ID", wt = dat$ipw, modType = "quartic",
+                  grp = "foodDiff3", covs = x))
+
+# extract fit statistics
+results.fitstats[["peer"]] = peerfits |> 
+  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
+
+results.est[["peer"]] = peerfits |> 
+  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
+```
+
+## No covariates 
+
+```{r results='asis'}
+sjPlot::tab_model(peerfits[[1]]$fit)
+print(peerfits[[1]]$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = peerfits[[1]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
+
+emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Peer")
 
 emmeans.plot
 ```
 
-### Covariates sex and income {.tabset}
+## Covariates sex and income
 
-#### Model
-
-```{r results='asis'}
-fit = lmer(Dsdpr1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
+```{r}
+sjPlot::tab_model(peerfits[[2]]$fit)
+print(peerfits[[2]]$diagnostics)
 ```
 
-#### Plot
+## Covariates sex, income, maternal MH
 
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5, 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
+```{r}
+sjPlot::tab_model(peerfits[[3]]$fit)
+print(peerfits[[3]]$diagnostics)
+```
 
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon(aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+```{r results='asis'}
+sjPlot::tab_model(peerfits[[4]]$fit)
+print(peerfits[[4]]$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = peerfits[[4]], sw = "sweep",
+                   age_y = "Age", emm_at = emm_at)
+
+emm.list[["peer"]] = plotdat$emm
+
+pred.low = list(raw.df = plotdat$raw.df, 
+                pred.df = plotdat$pred.df |>
+                  filter(IMD=="5"&income=="<100"))
+pred.hi = list(raw.df = plotdat$raw.df, 
+               pred.df = plotdat$pred.df |>
+                 filter(IMD=="1"&income==">400"))
+```
+
+### Lowest level covariates
+
+```{r results='asis'}
+emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Peer")
 
-emmeans.plot + facet_grid(~ Sex)
+emmeans.plot + facet_wrap(~sex)
 ```
 
-### Covariates sex, income, maternal MH {.tabset}
-
-#### Model
+### Highest level covariates
 
 ```{r results='asis'}
-fit = lmer(Dsdpr1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
-```
-
-#### Plot
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-
-#plot overall model 
-emmeans.plot = pred %>% filter(DeEqv5 == "1") %>% ggplot() + 
-  geom_line( aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon( aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
+emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
   xlab("Age") + ylab("SDQ Peer")
 
-emmeans.plot + facet_grid(~ Sex)
+emmeans.plot + facet_wrap(~sex)
 ```
 
-### Covariates sex, income, maternal MH, SIMD {.tabset}
 
-#### Model
+# Fit contrasts and save all results
 
-```{r results='asis'}
-fit = lmer(Dsdpr1 ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5 + scale(DeSf12mn) + ALeSNim2 + (1 + age.cent |Idnumber),
-                 REML = TRUE ,
-                 data = dat ,
-                 weights = Djwtbth2a,
-                 control = lmerControl(optimizer="bobyqa",
-                                      optCtrl=list(maxfun=2e5)))
-check_fit(fit)
-kbl(t(summary(fit)[["AICtab"]])) %>%
-  kable_styling(full_width = F)
-sjPlot::tab_model(fit)
+```{r}
+## setup for contrasts
+# set contrast grid so that it's always more FI vs less FI
+contrast_alspac = list(
+  "Slightly vs Not difficult" = c(-1, 0, 1),
+  "Fairly/Very vs Not difficult" = c(-1, 1, 0),
+  "Fairly/Very amount vs Slightly" = c(0, 1, -1)
+)
+
+results.contr = emm.list |> 
+  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age), emm_at = emm_at, c_grid = contrast_alspac))
+
+openxlsx::write.xlsx(results.est, "C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/OUTPUT/FI_FullSample_Estimates.xlsx")
+
+openxlsx::write.xlsx(results.fitstats, "C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/OUTPUT/FI_FullSample_FitStats.xlsx")
+
+openxlsx::write.xlsx(results.contr, "C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/OUTPUT/FI_FullSample_Contrasts.xlsx")
 ```
-
-#### Lowest level covariates
-
-```{r results='asis', fig.width=10}
-emm = emmeans(fit, specs = ~ age.cent*MeFaff3lvl + I(age.cent^2)*MeFaff3lvl + I(age.cent^3)*MeFaff3lvl + I(age.cent^4)*MeFaff3lvl + Sex + DeEqv5 + ALeSNim2 + scale(DeSf12mn), 
-              at = at_vals, 
-              lmer.df = "satterthwaite")
-
-# add a column with the original age values
-pred = as.data.frame(summary(emm)) %>% cbind(., age_vals)
-
-#plot overall model 
-low.plot = pred %>% filter(DeEqv5 == "1", ALeSNim2 == "1") %>% ggplot() + 
-  geom_line( aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon( aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Peer") + 
-  ggtitle("Lowest income and SIMD")
-
-low.plot + facet_grid(~ Sex)
-```
-
-#### Highest level covariate plot 
-
-```{r results='asis', fig.width=10}
-high.plot = pred %>% filter(DeEqv5 == "5", ALeSNim2 == "5") %>% ggplot() + 
-  geom_line(aes(x = age_vals, y = emmean, colour = MeFaff3lvl),
-            linewidth = 1.5, na.rm = T) + 
-  geom_ribbon( aes(x = age_vals, y = emmean, fill = MeFaff3lvl,
-                  ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.2, na.rm = T) +
-  geom_point(data = df.plot, aes(x=Age, y=Phenotype))+
-  geom_line(data = df.plot, aes(x=Age, y=Phenotype)) +
-  geom_errorbar(data = df.plot, aes(x=Age, ymin = lower, ymax = upper)) +
-  xlab("Age") + ylab("SDQ Peer") + 
-  ggtitle("Highest income and SIMD")
-
-high.plot + facet_grid(~ Sex)
-```
-
 

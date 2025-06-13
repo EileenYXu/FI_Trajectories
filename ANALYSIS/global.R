@@ -6,6 +6,7 @@ library(lmerTest)
 library(kableExtra)
 library(tidyverse)
 library(emmeans)
+library(broom.mixed)
 emm_options(lmerTest.limit = 40000, pbkrtest.limit = 40000)
 
 # check_fit() ----
@@ -110,21 +111,34 @@ get_sum_stats <- function(dat, vars) {
 # dat should be long
 # age should be pre-centred
 
-fit_lmer <- function(dat, outcome, age, covs = NULL, id, wt = NULL, modType) {
+fit_lmer <- function(dat, outcome, age, grp = NULL, covs = NULL, id, wt = NULL, modType) {
   rhs_ranef = paste0("(1 + ", age, " | ", id, ")")
   
-  rhs_age <- case_when(
+  rhs_age <- if (!is.null(grp)) {
+    case_when(
+      modType == "linear" ~ 
+        paste0(age,"*", grp),
+      modType == "quadratic" ~ 
+        paste0(age,"*", grp," + I(", age, "^2)*", grp),
+      modType == "cubic" ~ 
+        paste0(age,"*",grp, " + I(", age, "^2)*",grp,
+               " + I(", age, "^3)*",grp),
+      modType == "quartic" ~ 
+        paste0(age,"*",grp, " + I(", age, "^2)*",grp,
+               " + I(", age, "^3)*",grp," + I(", age, "^4)*",grp))
+  } else {
+    case_when(
     modType == "linear" ~ paste0(age),
     modType == "quadratic" ~ paste0(age, " + I(", age, "^2)"),
     modType == "cubic" ~ paste0(age, " + I(", age, "^2) + I(", age, "^3)"),
     modType == "quartic" ~ paste0(age, " + I(", age, "^2) + I(", age, 
-                                  "^3) + I(", age, "^4)"))
+                                  "^3) + I(", age, "^4)"))}
   
   rhs_cov <- if (!is.null(covs)) {
     paste(covs, sep = " + ")
   }
   
-  rhs <- paste(c(rhs_cov, rhs_age, rhs_cov, rhs_ranef), collapse = " + ")
+  rhs <- paste(c(rhs_age, rhs_cov, rhs_ranef), collapse = " + ")
   
   form <- paste(outcome, rhs, sep = " ~ ")
   
@@ -155,11 +169,7 @@ fit_lmer <- function(dat, outcome, age, covs = NULL, id, wt = NULL, modType) {
 plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
 
   # extract centred age from formula
-<<<<<<< HEAD
   agevar <- str_extract(obj$formula, pattern = "(?<=\\d{1}\\s{1}\\+\\s{1}).*(?=\\s{1}\\|)")
-=======
-  agevar <- str_extract(conduct_fit$formula, pattern = "(?<=\\d{1}\\s{1}\\+\\s{1}).*(?=\\s{1}\\|)")
->>>>>>> 929a3dc2acf1e22de25b93314d3ccd65b0b9f147
 
   # extract outcome from formula
   outcome <- str_extract(obj$formula, pattern = ".*(?=\\s{1}\\~)")
@@ -176,14 +186,15 @@ plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
     mutate(upper = Phenotype + ( qnorm(0.975)*SD/sqrt(n) ),
            lower = Phenotype - ( qnorm(0.975)*SD/sqrt(n) ))
   
+  if (is.null(emm_at)==T) {
   #list of ages to make scores for
   age_vals <-  seq(min(dat[[age_y]]), max(dat[[age_y]]), 0.5) 
   
   #mean center to fit with the model
   age_cent <-  age_vals - mean(dat[[age_y]], na.rm = T) 
   
-  age_at <- list(age_cent) |> `names<-`(agevar)
-  emm_at <- append(age_at, emm_at)
+  emm_at <- list(age_cent) |> `names<-`(agevar)
+  }
   
   # get scores at ages
   emm <- emmeans(obj$fit, specs = as.formula(rhs_fixed), 
@@ -193,7 +204,7 @@ plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
   # add a column with the original age values
   pred.df <- as.data.frame(summary(emm)) %>% cbind(., age_vals)
   
-  out <- list(raw.df = raw.df, pred.df = pred.df)
+  out <- list(raw.df = raw.df, pred.df = pred.df, emm = emm)
   
   return(out)
 }
@@ -205,11 +216,12 @@ plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
 # makes plot with predicted trajectory
 # still need to manually specify axis labels etc
 
-traj_plot <- function(plotdat) {
+traj_plot <- function(plotdat, colour=NULL) {
   pred.df = plotdat$pred.df
   raw.df = plotdat$raw.df
   
-  ggplot() + 
+  if (is.null(colour)==T) {
+      ggplot() + 
     geom_line(data = pred.df,
               aes(x = age_vals, y = emmean),
               linewidth = 1.5, na.rm = T, colour = "#0072B2") + 
@@ -220,5 +232,36 @@ traj_plot <- function(plotdat) {
     geom_point(data = raw.df, aes(x=Age, y=Phenotype))+
     geom_line(data = raw.df, aes(x=Age, y=Phenotype)) +
     geom_errorbar(data = raw.df, aes(x=Age, ymin = lower, ymax = upper))
+  } else {
+    ggplot() + 
+      geom_line(data = pred.df,
+                aes(x = age_vals, y = emmean, colour = !!sym(colour)),
+                linewidth = 1.5, na.rm = T) + 
+      geom_ribbon(data = pred.df,
+                  aes(x = age_vals, y = emmean, fill = !!sym(colour),
+                      ymin = lower.CL, ymax = upper.CL),
+                  alpha = 0.2, na.rm = T) +
+      geom_point(data = raw.df, aes(x=Age, y=Phenotype))+
+      geom_line(data = raw.df, aes(x=Age, y=Phenotype)) +
+      geom_errorbar(data = raw.df, aes(x=Age, ymin = lower, ymax = upper))
+  }
 }
   
+
+# contrasts ----
+
+# emm = emm from plot_dfs
+# age_m = mean age to reverse mean-centring 
+# simple = variable to use for contrasts, levels correspond to c_grid
+
+mod_contrasts <- function(emm, simple, age_m, emm_at, c_grid) {
+  
+  emm_comparisons = contrast(emm, method = c_grid, simple = simple) |> broom::tidy()
+  
+  #add age column
+  emm_comparisons$Age = emm_comparisons$age.cent + age_m
+  
+  emm_comparisons = emm_comparisons |> relocate(Age) |> select(-age.cent, -term) |> filter(!(Age %% 1))
+  
+  return(emm_comparisons)
+}
