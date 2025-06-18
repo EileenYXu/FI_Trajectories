@@ -2,7 +2,7 @@
 
 # load get_data_dict() and n_occ_missed()
 setwd("/exports/eddie/scratch/s1659680/")
-source("funs.R")
+source(here::here("FUNS", "prep.R"))
 
 
 # packages

@@ -1,10 +1,10 @@
 ---
-title: "Food Insecurity and SDQ trajectories"
+title: "ALSPAC Food Insecurity and SDQ trajectories"
 output:
   html_document:
     toc: true
-    toc_float:
-      collapsed: false
+    toc_float: true
+    keep_md: true
 ---
 
 Fitting models of SDQ trajectories with food insecurity at age 5 as a 3-level factor. The polynomial terms included here may need to be edited depending on what best fits the data.\
@@ -21,38 +21,35 @@ SDQ emotional problems score\
 SDQ hyperactivity score\
 SDQ peer problems score\
 Sample weight (delete the 'wt = ,' argument if not using weights)\
-3-level food insecurity measure\
+**3-level food insecurity measure**\
 Household income\
 Maternal MH score (continuous)\
 IMD quintiles\
 
-```{r setup, include=FALSE}
+```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
-source("ANALYSIS/global.R")
+library(here)
+i_am("ANALYSIS/ALSPAC/ALSPAC_FI.Rmd")
+source(here("FUNS", "packages.R"))
+source(here("FUNS", "mods.R"))
+source(here("FUNS", "plot.R"))
 ```
 
 ```{r read data}
 dat = readRDS("G://users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
-
 ## miscellaneous setup
 
 dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") #highest income as ref
 dat$IMD = factor(dat$IMD, ordered=FALSE) |> relevel(ref = "1") #least deprived as ref
 
-## setup for emmeans
-age_vals = seq(round(min(dat$Age)), round(max(dat$Age)), 0.5) #list of ages to make scores for
-age_cent = age_vals - mean(dat$Age, na.rm = T) #mean center to fit with the model
-emm_at = list(age.cent = age_cent, income = levels(dat$income), sex = levels(dat$sex), IMD = levels(dat$IMD)) #list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
+## setup for emmeans (emm_at)
+#list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
+emm_at = c(make_emm_at(age_y = dat$Age, agevar = "age.cent"), income = levels(dat$income), sex = levels(dat$sex), IMD = levels(dat$IMD)) 
 
 ## setup for model covariates
 # 4 covariate structures
 covars = list(NULL, c("sex", "income"), c("sex", "income", "epds"), c("sex", "income", "epds", "IMD"))
-# column with model covariates
-modcovs = data.frame("covars" = covars |> map_chr(\(x) paste(x, collapse = "+")))
 
-results.fitstats = list()
-results.est = list()
-emm.list = list()
 ```
 
 # Conduct problems {.tabset}
@@ -62,13 +59,6 @@ conductfits = covars |>
   map(\(x) fit_lmer(dat = dat, outcome ="conduct", age = "age.cent",
                   id = "ID", wt = dat$ipw, modType = "cubic",
                   grp = "foodDiff3", covs = x))
-
-# extract fit statistics
-results.fitstats[["conduct"]] = conductfits |> 
-  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
-
-results.est[["conduct"]] = conductfits |> 
-  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
 ```
 
 ## No covariates
@@ -109,8 +99,6 @@ print(conductfits[[4]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = conductfits[[4]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emm.list[["conduct"]] = plotdat$emm
-
 pred.low = list(raw.df = plotdat$raw.df, 
                 pred.df = plotdat$pred.df |>
                   filter(IMD=="5"&income=="<100"))
@@ -144,13 +132,6 @@ emotfits = covars |>
   map(\(x) fit_lmer(dat = dat, outcome ="emot", age = "age.cent",
                   id = "ID", wt = dat$ipw, modType = "cubic",
                   grp = "foodDiff3", covs = x))
-
-# extract fit statistics
-results.fitstats[["emot"]] = emotfits |> 
-  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
-
-results.est[["emot"]] = emotfits |> 
-  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
 ```
 
 ## No covariates 
@@ -191,8 +172,6 @@ print(emotfits[[4]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = emotfits[[4]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emm.list[["emot"]] = plotdat$emm
-
 pred.low = list(raw.df = plotdat$raw.df, 
                 pred.df = plotdat$pred.df |>
                   filter(IMD=="5"&income=="<100"))
@@ -226,13 +205,6 @@ hyperfits = covars |>
   map(\(x) fit_lmer(dat = dat, outcome ="hyper", age = "age.cent",
                   id = "ID", wt = dat$ipw, modType = "quartic",
                   grp = "foodDiff3", covs = x))
-
-# extract fit statistics
-results.fitstats[["hyper"]] = hyperfits |> 
-  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
-
-results.est[["hyper"]] = hyperfits |> 
-  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
 ```
 
 ## No covariates 
@@ -273,8 +245,6 @@ print(hyperfits[[4]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = hyperfits[[4]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emm.list[["hyper"]] = plotdat$emm
-
 pred.low = list(raw.df = plotdat$raw.df, 
                 pred.df = plotdat$pred.df |>
                   filter(IMD=="5"&income=="<100"))
@@ -308,13 +278,6 @@ peerfits = covars |>
   map(\(x) fit_lmer(dat = dat, outcome ="peer", age = "age.cent",
                   id = "ID", wt = dat$ipw, modType = "quartic",
                   grp = "foodDiff3", covs = x))
-
-# extract fit statistics
-results.fitstats[["peer"]] = peerfits |> 
-  map(\(x) glance(x$fit)) |> reduce(rbind) |> cbind(modcovs) |> relocate(covars)
-
-results.est[["peer"]] = peerfits |> 
-  map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> reduce(rbind)
 ```
 
 ## No covariates 
@@ -355,8 +318,6 @@ print(peerfits[[4]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = peerfits[[4]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emm.list[["peer"]] = plotdat$emm
-
 pred.low = list(raw.df = plotdat$raw.df, 
                 pred.df = plotdat$pred.df |>
                   filter(IMD=="5"&income=="<100"))
@@ -384,10 +345,37 @@ emmeans.plot + facet_wrap(~sex)
 ```
 
 
-# Fit contrasts and save all results
+# Extract results dataframes
 
 ```{r}
-## setup for contrasts
+# column with model covariates for renaming
+modcovs = data.frame("covars" = covars |> map_chr(\(x) paste(x, collapse = "+")))
+
+sdqmods = list("conduct" = conductfits, "emot" = emotfits, "hyper" = hyperfits, "peer" = peerfits)
+
+results.fitstats = sdqmods |> 
+  map(\(x) get_fitstats(fitlist = x, modguide = modcovs))
+results.est = sdqmods |> 
+  map(\(x) get_ests(x))
+
+openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "FI_Estimates.xlsx"))
+openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "FI_FitStats.xlsx"))
+```
+
+
+# Fit contrasts
+
+```{r}
+# fit contrasts for the fully-adjusted models only
+contrmods = list("conduct" = conductfits[[4]], "emot" = emotfits[[4]], "hyper" = hyperfits[[4]], "peer" = peerfits[[4]])
+
+# fit contrasts at age 7, 9, 11, 13, 15, 18
+emm_at$age.cent = c(7, 9, 11, 13, 15, 18) - mean(dat$Age)
+
+# get the emmeans output object - has predicted values but also some more stuff
+emm.list = contrmods |> 
+  map(\(x) get_emm(dat = dat, obj = x, emm_at = emm_at))
+
 # set contrast grid so that it's always more FI vs less FI
 contrast_alspac = list(
   "Slightly vs Not difficult" = c(-1, 0, 1),
@@ -395,13 +383,10 @@ contrast_alspac = list(
   "Fairly/Very amount vs Slightly" = c(0, 1, -1)
 )
 
+# run the contrasts bit
 results.contr = emm.list |> 
   map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age), emm_at = emm_at, c_grid = contrast_alspac))
 
-openxlsx::write.xlsx(results.est, "C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/OUTPUT/FI_FullSample_Estimates.xlsx")
-
-openxlsx::write.xlsx(results.fitstats, "C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/OUTPUT/FI_FullSample_FitStats.xlsx")
-
-openxlsx::write.xlsx(results.contr, "C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/OUTPUT/FI_FullSample_Contrasts.xlsx")
+openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))
 ```
 

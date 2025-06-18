@@ -3,10 +3,8 @@ title: "ALSPAC SDQ trajectories (age only)"
 output:
   html_document:
     toc: true
-    toc_float:
-      collapsed: false
-editor_options: 
-  chunk_output_type: inline
+    toc_float: true
+    keep_md: true
 ---
 
 Identifying which polynomial terms to include in longitudinal models of SDQ domains for the whole sample and for males and females separately. This code fits 4 models for each SDQ domain and performs model comparisons to compare fit metrics e.g. AIC, BIC.\
@@ -29,7 +27,11 @@ Optionally, dat can include sample weights too.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
-source("C://Users/eilee/Desktop/PhD/Year 3/Food Insecurity/FI_Trajectories/ANALYSIS/global.R")
+library(here)
+i_am("ANALYSIS/ALSPAC/ALSPAC_Age_Only.Rmd")
+source(here("FUNS", "packages.R"))
+source(here("FUNS", "mods.R"))
+source(here("FUNS", "plot.R"))
 ```
 
 # Full sample {.tabset}

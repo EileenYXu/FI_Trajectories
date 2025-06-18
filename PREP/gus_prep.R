@@ -4,7 +4,7 @@
 library(tidyverse)
 
 ## variable names to extract at each sweep
-vars = c("IDNumber|HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1")
+vars = c("IDNumber|HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1|wtbth2")
 
 #### Sweep 5 data ####
 sw5 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw5_b_protect.tab") %>%
@@ -67,7 +67,6 @@ sw5 = sw5 %>% mutate(
 )
 
 # save this demographics file for easy access
-write.csv(sw5, "G://users/eileen/Food_Ins/DATA/sw5_demog.csv")
 saveRDS(sw5, "G://users/eileen/Food_Ins/DATA/sw5_demog.rds")
 
 # for analysis, remove columns with descriptive factor levels
@@ -90,12 +89,13 @@ sw8 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw8_b_protect.ta
 sw9 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw9_protect.tab") %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
 
 #make sure to read in sweep 10 longitudinal weights
-sw10 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_bc1sw10_protect.tab") %>% select(grep(paste0(vars,"|Djwtbth2a"), names(.), ignore.case = TRUE))
+sw10 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_bc1sw10_protect.tab") %>% select(grep(paste0(vars), names(.), ignore.case = TRUE))
 
+sw10 = sw10 |> select(-Djwtbth2f)
 
 #### Merge SDQ data into wide dataset ####
 names(sw9)[1] = "Idnumber"
-names(sw10) = c("Idnumber", "DjHGagC", "DjDsdem1", "DjDsdco1", "DjDsdhy1", "DjDsdpr1", "DjDsdps1", "DjDsdto1", "Djwtbth2a")
+names(sw10) = c("Idnumber", "DjHGagC", "DjDsdem1", "DjDsdco1", "DjDsdhy1", "DjDsdpr1", "DjDsdps1", "DjDsdto1", "DjWTbth2")
 
 # first merge sweeps 5 - 8 which have all the SDQ data but no boost sample
 sdq = list(sw5, sw6, sw7, sw8) %>% reduce(left_join, by='Idnumber')
@@ -106,7 +106,7 @@ dat_wide = list(sdq, sw9, sw10) %>% reduce(left_join, by ="Idnumber", unmatched 
 na_strings = c(-1:-9)
 dat_wide = dat_wide %>% mutate(
   across(
-    everything(), .fns = ~ifelse(.x %in% na_strings, NA, .x)))
+    where(is.numeric), .fns = ~ifelse(.x %in% na_strings, NA, .x)))
 dat_wide = droplevels(dat_wide)
 
 #### sweep 4 social support ####
@@ -127,59 +127,51 @@ dat_wide = dat_wide %>% mutate(
   food_help = case_when(
     is.na(help_bin)==T ~ NA,
     .default = paste(MeFaff3lvl, help_bin, sep = ".")
-  ) %>% as.factor() %>%
-    relevel(ref = "Not at all.Enough")
+  ) %>% fct_relevel("Not at all.Enough")
 )
 
-# Save data in wide format prior to removing anyone
-write.csv(dat_wide, "G://users/eileen/Food_Ins/DATA/GUS_wide.csv")
-saveRDS(dat_wide, "G://users/eileen/Food_Ins/DATA/GUS_wide.rds")
-
-
 #### Wide to long ####
-sdq = c("HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1")
+sdq = c("HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1|WTbth2")
 
 dat_long = dat_wide %>% pivot_longer(
   cols = grep(paste0(sdq), names(.), ignore.case = T),
   cols_vary = "slowest",
   names_to = c("sweep", ".value"),
-  names_pattern = "(^D[efghij])(HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1)"
+  names_pattern = "(^D[efghij])(HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1|WTbth2)"
 )
 
 #### For main FI analyses ####
 
 ## Remove rows with missing age/SDQ/covariates 
 completecols = c("HGagC", "Dsdem1", "Dsdco1", "Dsdhy1", "Dsdpr1", "Dsdto1", 
-                 "MeFaff3lvl", "DeEqv5", "DeSf12mn", "ALeSNim2")
+                 "MeFaff3lvl", "DeEqv5", "DeSf12mn", "ALeSNim2", "WTbth2")
 index = complete.cases(dat_long[,completecols])
 dat_complete = dat_long[index,]
 
-## Now remove individuals with less than 3 datapoints. (need at least 3 for linear models)
+## Now remove individuals with less than 2 datapoints. (need at least 2 for linear model)
 ids_remove = dat_complete |> group_by(Idnumber) |> summarise(N = n()) |> 
-  filter(N < 3) |> pull(Idnumber)
+  filter(N < 2) |> pull(Idnumber)
 
 dat_mod = dat_complete |> filter(!(Idnumber %in% ids_remove)) |> 
   mutate(Age = HGagC/12, #age in years
          age.cent = (HGagC/12) - mean((HGagC/12), na.rm = T)) #age in years and mean centred
 
-write.csv(dat_mod, "G://users/eileen/Food_Ins/DATA/GUS_long.csv")
 saveRDS(dat_mod, "G://users/eileen/Food_Ins/DATA/GUS_long.rds")
 
 #### For FI x Social analyses ####
 
 ## Remove rows with missing age/SDQ/covariates 
 completeFS = c("HGagC", "Dsdem1", "Dsdco1", "Dsdhy1", "Dsdpr1", "Dsdto1", 
-                 "food_help", "DeEqv5", "DeSf12mn", "ALeSNim2")
+                 "food_help", "DeEqv5", "DeSf12mn", "ALeSNim2", "WTbth2")
 indexFS = complete.cases(dat_long[,completeFS])
 dat_completeFS = dat_long[indexFS,]
 
-## Now remove individuals with less than 3 datapoints. (need at least 3 for linear models)
+## Now remove individuals with less than 2 datapoints. (need at least 2 for linear model)
 ids_removeFS = dat_completeFS |> group_by(Idnumber) |> summarise(N = n()) |> 
-  filter(N < 3) |> pull(Idnumber)
+  filter(N < 2) |> pull(Idnumber)
 
 dat_FS = dat_completeFS |> filter(!(Idnumber %in% ids_removeFS)) |> 
   mutate(Age = HGagC/12, #age in years
          age.cent = (HGagC/12) - mean((HGagC/12), na.rm = T)) #age in years and mean centred
 
-write.csv(dat_FS, "G://users/eileen/Food_Ins/DATA/GUS_long_FS.csv")
 saveRDS(dat_FS, "G://users/eileen/Food_Ins/DATA/GUS_long_FS.rds")
