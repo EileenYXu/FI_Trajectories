@@ -41,7 +41,7 @@ source(here("FUNS", "plot.R"))
 ```{r read data, results='asis'}
 dat = readRDS("G://users/eileen/Food_Ins/DATA/GUS_long.rds")
 
-dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, peer = Dsdpr1, ipw = WTbth2)
+dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, peer = Dsdpr1, WTbth2 = WTbth2)
 
 sumtable = dat %>% group_by(across(sweep)) %>%
           summarise(N = n(),
@@ -64,7 +64,7 @@ modTypes = c("linear", "quadratic", "cubic", "quartic")
 ```{r}
 conduct_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat, outcome ="conduct", age = "age.cent",
-                  id = "ID", wt = dat$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -88,7 +88,7 @@ emmeans.plot
 ```{r}
 emot_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat, outcome ="emot", age = "age.cent",
-                  id = "ID", wt = dat$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -113,7 +113,7 @@ emmeans.plot
 ```{r}
 hyper_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat, outcome ="hyper", age = "age.cent",
-                  id = "ID", wt = dat$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -139,7 +139,7 @@ emmeans.plot
 ```{r}
 peer_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat, outcome ="peer", age = "age.cent",
-                  id = "ID", wt = dat$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -171,7 +171,7 @@ dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
 ```{r}
 conduct_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.m, outcome ="conduct", age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -195,7 +195,7 @@ emmeans.plot
 ```{r}
 emot_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.m, outcome ="emot", age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -219,7 +219,7 @@ emmeans.plot
 ```{r}
 hyper_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.m, outcome ="hyper", age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -243,7 +243,7 @@ emmeans.plot
 ```{r}
 peer_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.m, outcome ="peer", age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -274,7 +274,7 @@ dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
 ```{r}
 conduct_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.f, outcome ="conduct", age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -299,7 +299,7 @@ emmeans.plot
 ```{r}
 emot_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.f, outcome ="emot", age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -324,7 +324,7 @@ emmeans.plot
 ```{r}
 hyper_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.f, outcome ="hyper", age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
 
@@ -349,7 +349,7 @@ emmeans.plot
 ```{r}
 peer_fits = modTypes |> 
   map(\(x) fit_lmer(dat = dat.f, outcome ="peer", age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = x)) |> `names<-`(modTypes)
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
 
 fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
 

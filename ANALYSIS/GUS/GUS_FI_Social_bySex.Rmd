@@ -1,5 +1,5 @@
 ---
-title: "Food insecurity and parental social support, split by sex in ALSPAC"
+title: "GUS: Food insecurity and parental social support by sex"
 output:
   html_document:
     toc: true
@@ -16,14 +16,14 @@ Input data (dat) should be in long format and contain the same variables as the 
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
 library(here)
-i_am("ANALYSIS/ALSPAC/ALSPAC_Social.Rmd")
+i_am("ANALYSIS/GUS/GUS_Social.Rmd")
 source(here("FUNS", "packages.R"))
 source(here("FUNS", "mods.R"))
 source(here("FUNS", "plot.R"))
 ```
 
 ```{r read data}
-dat = readRDS("G://users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
+dat = readRDS("G://users/eileen/Food_Ins/DATA/GUS_long.rds")
 ```
 
 # 3-level Food Insecurity
@@ -31,22 +31,22 @@ dat = readRDS("G://users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
 ## Males {.tabset}
 
 ```{r}
-dat.m = dat %>% filter(sex == "Male")
+dat.m = dat %>% filter(Sex == "M")
 dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
 
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "cubic","peer"= "quartic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="quartic","emot" ="cubic","hyper"= "linear","peer"= "cubic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat.m, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = y,
-                  grp = "foodDiff3"))
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = y,
+                  grp = "MeFaff3lvl"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 m.fitstats = get_fitstats(modfits, modguide = modguide)
 m.est = get_ests(modfits)
-outcome = data.frame("Outcome" = c(rep("conduct", 12), rep("emot", 9), 
-                                   rep("hyper", 12), rep("peer", 15)))
+outcome = data.frame("Outcome" = c(rep("conduct", 15), rep("emot", 12), 
+                                   rep("hyper", 6), rep("peer", 12)))
 m.est = cbind(outcome, m.est) |> relocate(Outcome)
 ```
 
@@ -59,7 +59,7 @@ print(modfits$conduct$diagnostics)
 plotdat = plot_dfs(dat = dat.m, obj = modfits$conduct, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Conduct")
 
 emmeans.plot
@@ -75,7 +75,7 @@ print(modfits$emot$diagnostics)
 plotdat = plot_dfs(dat = dat.m, obj = modfits$emot, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Emotional")
 
 emmeans.plot
@@ -90,7 +90,7 @@ print(modfits$hyper$diagnostics)
 plotdat = plot_dfs(dat = dat.m, obj = modfits$hyper, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Hyper")
 
 emmeans.plot
@@ -105,7 +105,7 @@ print(modfits$peer$diagnostics)
 plotdat = plot_dfs(dat = dat.m, obj = modfits$peer, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Peer")
 
 emmeans.plot
@@ -115,22 +115,22 @@ emmeans.plot
 ## Females {.tabset}
 
 ```{r}
-dat.f = dat %>% filter(sex == "Female")
+dat.f = dat %>% filter(Sex == "F")
 dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
 
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="cubic","hyper"= "quartic","peer"= "quadratic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "quadratic","peer"= "quartic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat.f, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = y,
-                  grp = "foodDiff3"))
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = y,
+                  grp = "MeFaff3lvl"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 f.fitstats = get_fitstats(modfits, modguide = modguide)
 f.est = get_ests(modfits)
-outcome = data.frame("Outcome" = c(rep("conduct", 12), rep("emot", 12), 
-                                   rep("hyper", 15), rep("peer", 9)))
+outcome = data.frame("Outcome" = c(rep("conduct", 12), rep("emot", 9), 
+                                   rep("hyper", 9), rep("peer", 15)))
 f.est = cbind(outcome, f.est) |> relocate(Outcome)
 ```
 
@@ -143,7 +143,7 @@ print(modfits$conduct$diagnostics)
 plotdat = plot_dfs(dat = dat.f, obj = modfits$conduct, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Conduct")
 
 emmeans.plot
@@ -159,7 +159,7 @@ print(modfits$emot$diagnostics)
 plotdat = plot_dfs(dat = dat.f, obj = modfits$emot, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Emotional")
 
 emmeans.plot
@@ -174,7 +174,7 @@ print(modfits$hyper$diagnostics)
 plotdat = plot_dfs(dat = dat.f, obj = modfits$hyper, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Hyper")
 
 emmeans.plot
@@ -189,7 +189,7 @@ print(modfits$peer$diagnostics)
 plotdat = plot_dfs(dat = dat.f, obj = modfits$peer, sw = "sweep",
                    age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
   xlab("Age") + ylab("SDQ Peer")
 
 emmeans.plot
@@ -208,22 +208,22 @@ f.est.fi = f.est
 ## Males {.tabset}
 
 ```{r}
-dat.m = dat %>% filter(sex == "Male")
+dat.m = dat %>% filter(Sex == "M")
 dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
 
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "cubic","peer"= "quartic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="quartic","emot" ="cubic","hyper"= "linear","peer"= "cubic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat.m, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = y,
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = y,
                   grp = "food_help"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 m.fitstats = get_fitstats(modfits, modguide = modguide)
 m.est = get_ests(modfits)
-outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 6), 
-                                   rep("hyper", 8), rep("peer", 10)))
+outcome = data.frame("Outcome" = c(rep("conduct", 30), rep("emot", 24), 
+                                   rep("hyper", 12), rep("peer", 24)))
 m.est = cbind(outcome, m.est) |> relocate(Outcome)
 ```
 
@@ -292,22 +292,22 @@ emmeans.plot
 ## Females {.tabset}
 
 ```{r}
-dat.f = dat %>% filter(sex == "Female")
+dat.f = dat %>% filter(Sex == "F")
 dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
 
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="cubic","hyper"= "quartic","peer"= "quadratic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "quadratic","peer"= "quartic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat.f, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = y,
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = y,
                   grp = "food_help"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 f.fitstats = get_fitstats(modfits, modguide = modguide)
 f.est = get_ests(modfits)
-outcome = data.frame("Outcome" = c(rep("conduct", 24), rep("emot", 24), 
-                                   rep("hyper", 30), rep("peer", 18)))
+outcome = data.frame("Outcome" = c(rep("conduct", 24), rep("emot", 18), 
+                                   rep("hyper", 18), rep("peer", 30)))
 f.est = cbind(outcome, f.est) |> relocate(Outcome)
 ```
 
@@ -377,6 +377,6 @@ emmeans.plot
 results.est = list("FI Male" = m.est.fi, "FI Female" = f.est.fi, "FIxSocial Male" = m.est, "FIxSocial Female" = f.est)
 results.fitstats = list("FI Male" = m.fitstats.fi, "FI Female" = f.fitstats.fi, "FIxSocial Male" = m.fitstats, "FIxSocial Female" = f.fitstats)
 
-openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "FI_Social_Estimates_bySex.xlsx"))
-openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "FI_Social_FitStats.xlsx"))
+openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "FI_Social_Estimates_bySex.xlsx"))
+openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "FI_Social_FitStats.xlsx"))
 ```

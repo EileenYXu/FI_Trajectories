@@ -1,15 +1,15 @@
 ### TIDYING ALSPAC DATA AND CREATING WEIGHTS FOR USE IN TRAJECTORIES ###
 
-# load get_data_dict() and n_occ_missed()
-setwd("/exports/eddie/scratch/s1659680/")
-source(here::here("FUNS", "prep.R"))
-
-
 # packages
 library(haven)
 library(tidyverse)
 library(mice)
 library(lme4)
+library(here)
+
+# load get_data_dict() and n_occ_missed()
+i_am("PREP/alspac_prep.R")
+source(here::here("FUNS", "prep.R"))
 
 # Selecting variables to extract ----
 
@@ -265,7 +265,7 @@ completecols = c("age", "conduct", "emot", "hyper", "peer", "prosoc")
 dat.long = dat.long[complete.cases(dat.long[, completecols]),]
 dat.long$Age = dat.long$age/12 #change age into years
 
-#mean centre age and make FI
+#mean centre age and make 3-level FI
 dat.long = dat.long |> mutate(
   age.cent = Age - mean(Age),
   foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
@@ -274,5 +274,10 @@ dat.long = dat.long |> mutate(
     fct_relevel("Not difficult")
 )
 
-write.csv(dat.long, "/exports/igmm/datastore/GenScotDepression/users/eileen/Food_Ins/DATA/ALSPAC_long.csv")
+# make matHelp binary and make food_help
+dat.long = dat.long |> mutate(
+  help_bin = ifelse(matHelp=="Too little", "Not enough", "Enough") |> fct_relevel("Enough"),
+  food_help = paste0(foodDiff3,".", help_bin) |> fct_relevel("Not difficult.Enough")
+)
+
 saveRDS(dat.long, "/exports/igmm/datastore/GenScotDepression/users/eileen/Food_Ins/DATA/ALSPAC_long.rds")

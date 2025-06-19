@@ -143,6 +143,23 @@ plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
 }
 
 
+# pred_add() ----
+
+# function to add columns to pred.df() by splitting one column into two
+# pred.df = pred.df from plot_dfs()
+# string = name of column to be split
+#     this column should be in the format [v1].[v2]
+# v1 = name of first new column
+# v2 = name of second new column
+
+pred_add <- function(pred.df, string, v1, v2) {
+  out <- mutate(pred.df,
+    !!v1 := stringr::str_split_i(string = !!sym(string), "\\.", i = 1),
+    !!v2 := stringr::str_split_i(string = !!sym(string), "\\.", i = 2)
+  )
+  return(out)
+}
+
 # traj_plot() ----
 
 # plotdat = output from plot_dfs

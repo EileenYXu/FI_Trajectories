@@ -1,5 +1,5 @@
 ---
-title: "Parental Social Support and SDQ trajectories in ALSPAC"
+title: "Parental social support in GUS"
 output:
   html_document:
     toc: true
@@ -7,51 +7,48 @@ output:
     keep_md: true
 ---
 
-The polynomial terms included here may need to be edited depending on what best fits the data.\
+## Parental social support as a protective factor
 
-Input data (dat) should be in long format, with the following variables (at minimum):\
+Trajectories of SDQ with parental support to investigate whether parental social support could be protective.
+  
+"MdSNsp01" - Overall, how do you feel about the amount of support or help you get from friends or family living elsewhere?  
+  1: I get enough help  
+  2: I don't get enough help  
+  3: I don't get any help  
+  4: I don't need any help  
 
-Participant ID\
-Identifier for each timepoint\
-Age (in years)\
-Mean-centred age (helpful for reducing convergence issues)\
-SDQ conduct problems score\
-SDQ emotional problems score\
-SDQ hyperactivity score\
-SDQ peer problems score\
-Sample weight (delete the 'wt = ,' argument if not using weights)\
-**binary parental social support measure **\
+Coded as a binary variable of "Enough" vs "Not Enough". "Do not need help" is removed too.
 
 
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
 library(here)
-i_am("ANALYSIS/ALSPAC/ALSPAC_Social.Rmd")
+i_am("ANALYSIS/GUS/GUS_Social.Rmd")
 source(here("FUNS", "packages.R"))
 source(here("FUNS", "mods.R"))
 source(here("FUNS", "plot.R"))
 ```
 
 ```{r read data}
-dat = readRDS("G://users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
+dat = readRDS("G://users/eileen/Food_Ins/DATA/GUS_long_FS.rds")
 ```
 
 # Full sample {.tabset}
 
 ```{r}
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="cubic","hyper"= "quartic","peer"= "quartic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="cubic","emot" ="cubic","hyper"= "linear","peer"= "quartic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat$ipw, modType = y,
+                  id = "Idnumber", wt = dat$WTbth2, modType = y,
                   grp = "help_bin"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 fullsamp.fitstats = get_fitstats(modfits, modguide = modguide)
 fullsamp.est = get_ests(modfits)
 outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 8), 
-                                   rep("hyper", 10), rep("peer", 10)))
+                                   rep("hyper", 4), rep("peer", 10)))
 fullsamp.est = cbind(outcome, fullsamp.est) |> relocate(Outcome)
 ```
 
@@ -119,22 +116,22 @@ emmeans.plot
 # Males {.tabset}
 
 ```{r}
-dat.m = dat %>% filter(sex == "Male")
+dat.m = dat %>% filter(Sex == "M")
 dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
 
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "cubic","peer"= "quartic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="quartic","emot" ="cubic","hyper"= "linear","peer"= "cubic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat.m, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat.m$ipw, modType = y,
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = y,
                   grp = "help_bin"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 m.fitstats = get_fitstats(modfits, modguide = modguide)
 m.est = get_ests(modfits)
-outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 6), 
-                                   rep("hyper", 8), rep("peer", 10)))
+outcome = data.frame("Outcome" = c(rep("conduct", 10), rep("emot", 8), 
+                                   rep("hyper", 4), rep("peer", 8)))
 m.est = cbind(outcome, m.est) |> relocate(Outcome)
 ```
 
@@ -203,22 +200,22 @@ emmeans.plot
 # Females {.tabset}
 
 ```{r}
-dat.f = dat %>% filter(sex == "Female")
+dat.f = dat %>% filter(Sex == "F")
 dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
 
-sdq = c("conduct" = "conduct", "emot" = "emot","hyper"= "hyper","peer"= "peer")
-modtypes = c("conduct"="cubic","emot" ="cubic","hyper"= "quartic","peer"= "quadratic")
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "quadratic","peer"= "quartic")
 
 modfits = map2(sdq, modtypes, 
                \(x, y) fit_lmer(dat = dat.f, outcome = x, age = "age.cent",
-                  id = "ID", wt = dat.f$ipw, modType = y,
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = y,
                   grp = "help_bin"))
 
 modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
 f.fitstats = get_fitstats(modfits, modguide = modguide)
 f.est = get_ests(modfits)
-outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 8), 
-                                   rep("hyper", 10), rep("peer", 6)))
+outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 6), 
+                                   rep("hyper", 6), rep("peer", 10)))
 f.est = cbind(outcome, f.est) |> relocate(Outcome)
 ```
 
@@ -290,7 +287,7 @@ emmeans.plot
 results.est = list("All" = fullsamp.est, "Male" = m.est, "Female" = f.est)
 results.fitstats = list("All" = fullsamp.fitstats, "Male" = m.fitstats, "Female" = f.fitstats)
 
-openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "Social_Estimates.xlsx"))
-openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "Social_FitStats.xlsx"))
+openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "Social_Estimates.xlsx"))
+openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "Social_FitStats.xlsx"))
 ```
 
