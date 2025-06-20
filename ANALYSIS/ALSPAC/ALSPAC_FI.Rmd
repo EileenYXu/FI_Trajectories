@@ -71,7 +71,7 @@ plotdat = plot_dfs(dat = dat, obj = conductfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot
 ```
@@ -111,7 +111,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -120,7 +120,7 @@ emmeans.plot + facet_wrap(~sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -144,7 +144,7 @@ plotdat = plot_dfs(dat = dat, obj = emotfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot
 ```
@@ -184,7 +184,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -193,7 +193,7 @@ emmeans.plot + facet_wrap(~sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -217,7 +217,7 @@ plotdat = plot_dfs(dat = dat, obj = hyperfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Hyperactivity")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity")
 
 emmeans.plot
 ```
@@ -257,7 +257,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Hyperactivity")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -266,7 +266,7 @@ emmeans.plot + facet_wrap(~sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Hyperactivity")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -290,7 +290,7 @@ plotdat = plot_dfs(dat = dat, obj = peerfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot
 ```
@@ -330,7 +330,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot + facet_wrap(~sex)
 ```
@@ -339,7 +339,7 @@ emmeans.plot + facet_wrap(~sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot + facet_wrap(~sex)
 ```

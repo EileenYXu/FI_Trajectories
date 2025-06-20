@@ -73,7 +73,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat, obj = conduct_fits$cubic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 emmeans.plot
 ```
 
@@ -97,7 +97,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat, obj = emot_fits$cubic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 emmeans.plot
 ```
 
@@ -123,7 +123,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat, obj = hyper_fits$quartic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity")
 emmeans.plot
 ```
 
@@ -148,7 +148,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat, obj = peer_fits$quartic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 emmeans.plot
 ```
 
@@ -180,7 +180,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.m, obj = conduct_fits$cubic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 emmeans.plot
 ```
 
@@ -204,7 +204,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.m, obj = emot_fits$quadratic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 emmeans.plot
 ```
 
@@ -228,7 +228,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.m, obj = hyper_fits$cubic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity")
 emmeans.plot
 ```
 
@@ -252,7 +252,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.m, obj = peer_fits$quartic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 emmeans.plot
 ```
 
@@ -283,7 +283,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.f, obj = conduct_fits$cubic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 emmeans.plot
 ```
 
@@ -308,7 +308,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.f, obj = emot_fits$cubic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 emmeans.plot
 ```
 
@@ -333,7 +333,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.f, obj = hyper_fits$quartic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity")
 emmeans.plot
 ```
 
@@ -358,6 +358,6 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ```{r}
 plotdat = plot_dfs(dat = dat.f, obj = peer_fits$quadratic, sw = "sweep", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 emmeans.plot
 ```

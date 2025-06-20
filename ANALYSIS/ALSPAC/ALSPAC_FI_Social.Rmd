@@ -59,7 +59,7 @@ plotdat = plot_dfs(dat = dat, obj = conductfits[[1]], sw = "sweep",
 plotdat$pred.df = pred_add(plotdat$pred.df, string = "food_help", v1 = "Food", v2 = "Help")
 
 emmeans.plot = traj_plot(plotdat, colour = "Help") + 
-  xlab("Age") + ylab("SDQ Conduct") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -100,7 +100,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "Help") + 
-  xlab("Age") + ylab("SDQ Conduct") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(sex ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -109,7 +109,7 @@ emmeans.plot + facet_grid(sex ~ factor(Food, levels = c("Not difficult",        
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Conduct") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(sex ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly"))) 
 ```
@@ -134,7 +134,7 @@ plotdat = plot_dfs(dat = dat, obj = emotfits[[1]], sw = "sweep",
 plotdat$pred.df = pred_add(plotdat$pred.df, string = "food_help", v1 = "Food", v2 = "Help")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Emotional") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -175,7 +175,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Emotional") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -184,7 +184,7 @@ emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",          
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Emotional") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -209,7 +209,7 @@ plotdat = plot_dfs(dat = dat, obj = hyperfits[[1]], sw = "sweep",
 plotdat$pred.df = pred_add(plotdat$pred.df, string = "food_help", v1 = "Food", v2 = "Help")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Hyperactivity") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -250,7 +250,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Hyperactivity") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -259,7 +259,7 @@ emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",          
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Hyperactivity") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -284,7 +284,7 @@ plotdat = plot_dfs(dat = dat, obj = peerfits[[1]], sw = "sweep",
 plotdat$pred.df = pred_add(plotdat$pred.df, string = "food_help", v1 = "Food", v2 = "Help")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Peer") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -325,7 +325,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Peer") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -334,7 +334,7 @@ emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",          
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Peer") + labs(fill = "Help w/ child", colour = "Help w/ child")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer") + labs(fill = "Help w/ child", colour = "Help w/ child")
 
 emmeans.plot + facet_grid(. ~ factor(Food, levels = c("Not difficult",                                           "Fairly/Very", "Slightly")))
 ```
@@ -366,6 +366,8 @@ contrmods = list("conduct" = conductfits[[4]], "emot" = emotfits[[4]], "hyper" =
 
 # fit contrasts at age 7, 9, 11, 13, 15, 18
 emm_at$age.cent = c(7, 9, 11, 13, 15, 18) - mean(dat$Age)
+
+emm_at = list(age.cent = c(7, 9, 11, 13, 15, 18) - mean(dat$Age), sex = "Female", income = "<100", IMD = "5")
 
 # get the emmeans output object - has predicted values but also some more stuff
 emm.list = contrmods |> 

@@ -60,7 +60,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$conduct, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot
 ```
@@ -76,7 +76,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$emot, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot
 ```
@@ -91,7 +91,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$hyper, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Hyper")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyper")
 
 emmeans.plot
 ```
@@ -106,7 +106,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$peer, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot
 ```
@@ -144,7 +144,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$conduct, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot
 ```
@@ -160,7 +160,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$emot, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot
 ```
@@ -175,7 +175,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$hyper, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Hyper")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyper")
 
 emmeans.plot
 ```
@@ -190,7 +190,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$peer, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "foodDiff3") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot
 ```
@@ -237,7 +237,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$conduct, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot
 ```
@@ -253,7 +253,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$emot, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot
 ```
@@ -268,7 +268,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$hyper, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Hyper")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyper")
 
 emmeans.plot
 ```
@@ -283,7 +283,7 @@ plotdat = plot_dfs(dat = dat.m, obj = modfits$peer, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot
 ```
@@ -321,7 +321,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$conduct, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Conduct")
 
 emmeans.plot
 ```
@@ -337,7 +337,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$emot, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Emotional")
 
 emmeans.plot
 ```
@@ -352,7 +352,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$hyper, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Hyper")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Hyper")
 
 emmeans.plot
 ```
@@ -367,7 +367,7 @@ plotdat = plot_dfs(dat = dat.f, obj = modfits$peer, sw = "sweep",
                    age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat, colour = "food_help") + 
-  xlab("Age") + ylab("SDQ Peer")
+  scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 
 emmeans.plot
 ```

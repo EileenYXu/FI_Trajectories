@@ -158,7 +158,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Cubic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-2-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 ## Emotional problems
 
@@ -228,7 +228,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Cubic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 
 ## Hyperactivity
@@ -300,7 +300,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Quartic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 
 ## Peer problems
@@ -371,7 +371,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Quartic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 
 # Male only {.tabset}
@@ -446,7 +446,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Cubic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 ## Emotional problems
 
@@ -516,7 +516,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Quadratic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 ## Hyperactivity
 
@@ -586,7 +586,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Cubic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 ## Peer problems
 
@@ -656,7 +656,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Quartic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 # Female only {.tabset}
 
@@ -730,7 +730,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Cubic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-31-1.png)<!-- -->
 
 
 ## Emotional problems
@@ -801,7 +801,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Cubic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-33-1.png)<!-- -->
 
 
 ## Hyperactivity
@@ -872,7 +872,7 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Quartic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-35-1.png)<!-- -->
 
 
 ## Peer problems
@@ -943,4 +943,4 @@ Optionally, dat can include sample weights too.
 
 ### Plot model (Quadratic)
 
-![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-25-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\ALSPAC\ALSPAC~1/figure-html/unnamed-chunk-37-1.png)<!-- -->
