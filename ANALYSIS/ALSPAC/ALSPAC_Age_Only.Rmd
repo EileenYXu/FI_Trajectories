@@ -1,10 +1,10 @@
 ---
 title: "ALSPAC SDQ trajectories (age only)"
 output:
-  html_document:
+  github_document:
     toc: true
-    toc_float: true
-    keep_md: true
+    toc_depth: 2
+    df_print: "paged"
 ---
 
 Identifying which polynomial terms to include in longitudinal models of SDQ domains for the whole sample and for males and females separately. This code fits 4 models for each SDQ domain and performs model comparisons to compare fit metrics e.g. AIC, BIC.\

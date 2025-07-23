@@ -28,7 +28,6 @@ emm_at = c(make_emm_at(age_y = dat$Age, agevar = "age.cent"), DeEqv5 = levels(da
 ## setup for model covariates
 # 4 covariate structures
 covars = list(NULL, c("Sex", "DeEqv5"), c("Sex", "DeEqv5", "DeSf12mn"), c("Sex", "DeEqv5", "DeSf12mn", "ALeSNim2"))
-
 ```
 
 # Conduct problems {.tabset}
@@ -49,10 +48,12 @@ print(conductfits[[1]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = conductfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Conduct")
+conduct.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
+  xlab("Age (years)") + ylab("SDQ Conduct")
 
-emmeans.plot
+conduct.plot
+
+c.pred = plotdat$pred.df
 ```
 
 ## Covariates sex and income 
@@ -69,7 +70,7 @@ sjPlot::tab_model(conductfits[[3]]$fit)
 print(conductfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 ```{r results='asis'}
 sjPlot::tab_model(conductfits[[4]]$fit)
@@ -90,7 +91,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  xlab("Age (years)") + ylab("SDQ Conduct")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -99,7 +100,7 @@ emmeans.plot + facet_wrap(~Sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Conduct")
+  xlab("Age (years)") + ylab("SDQ Conduct")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -122,10 +123,11 @@ print(emotfits[[1]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = emotfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Emotional")
+emot.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
+  xlab("Age (years)") + ylab("SDQ Emotional")
 
-emmeans.plot
+emot.plot
+e.pred = plotdat$pred.df
 ```
 
 ## Covariates sex and income
@@ -142,7 +144,7 @@ sjPlot::tab_model(emotfits[[3]]$fit)
 print(emotfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 ```{r results='asis'}
 sjPlot::tab_model(emotfits[[4]]$fit)
@@ -163,7 +165,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  xlab("Age (years)") + ylab("SDQ Emotional")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -172,7 +174,7 @@ emmeans.plot + facet_wrap(~Sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Emotional")
+  xlab("Age (years)") + ylab("SDQ Emotional")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -195,10 +197,11 @@ print(hyperfits[[1]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = hyperfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Hyperactivity")
+hyper.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
+  xlab("Age (years)") + ylab("SDQ Hyperactivity")
 
-emmeans.plot
+hyper.plot
+h.pred = plotdat$pred.df
 ```
 
 ## Covariates sex and income
@@ -215,7 +218,7 @@ sjPlot::tab_model(hyperfits[[3]]$fit)
 print(hyperfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 ```{r results='asis'}
 sjPlot::tab_model(hyperfits[[4]]$fit)
@@ -236,7 +239,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Hyperactivity")
+  xlab("Age (years)") + ylab("SDQ Hyperactivity")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -245,7 +248,7 @@ emmeans.plot + facet_wrap(~Sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Hyperactivity")
+  xlab("Age (years)") + ylab("SDQ Hyperactivity")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -268,10 +271,11 @@ print(peerfits[[1]]$diagnostics)
 plotdat = plot_dfs(dat = dat, obj = peerfits[[1]], sw = "sweep",
                    age_y = "Age", emm_at = emm_at)
 
-emmeans.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Peer")
+peer.plot = traj_plot(plotdat, colour = "MeFaff3lvl") + 
+  xlab("Age (years)") + ylab("SDQ Peer")
 
-emmeans.plot
+peer.plot
+p.pred  = plotdat$pred.df
 ```
 
 ## Covariates sex and income
@@ -288,7 +292,7 @@ sjPlot::tab_model(peerfits[[3]]$fit)
 print(peerfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 ```{r results='asis'}
 sjPlot::tab_model(peerfits[[4]]$fit)
@@ -309,7 +313,7 @@ pred.hi = list(raw.df = plotdat$raw.df,
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.low, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Peer")
+  xlab("Age (years)") + ylab("SDQ Peer")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -318,7 +322,7 @@ emmeans.plot + facet_wrap(~Sex)
 
 ```{r results='asis'}
 emmeans.plot = traj_plot(pred.hi, colour = "MeFaff3lvl") + 
-  xlab("Age") + ylab("SDQ Peer")
+  xlab("Age (years)") + ylab("SDQ Peer")
 
 emmeans.plot + facet_wrap(~Sex)
 ```
@@ -339,6 +343,8 @@ results.est = sdqmods |>
 
 openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "FI_FitStats.xlsx"))
+
+save(list = c("c.pred", "e.pred", "h.pred", "p.pred"), file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
 ```
 
 

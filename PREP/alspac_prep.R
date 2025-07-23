@@ -29,7 +29,9 @@ covars = c("cidB3421", "qlet", "k6200", "k6221", "kz021", "h470", "kimd2010q5")
 # EPDS questions
 epds = c("k3030","k3031","k3032","k3033","k3034","k3035","k3036","k3037","k3038","k3039")
 
-# For generating weights
+# For generating weights 
+# Variables used: maternal age, maternal education level, maternal social class, parity, housing status,
+# financial difficulties, smoking during pregnancy, EPDS prenatal, EPDS postnatal, ethnicity
 weightvars = c("mz028b", "c645a", "c755", "b032", "a006", "c525", "b665", "c601", "e391", "c804") 
 
 vars = c(covars, age, epds, emot, conduct, hyper, peer, prosoc, weightvars)

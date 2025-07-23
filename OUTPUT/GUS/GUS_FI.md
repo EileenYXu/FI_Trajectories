@@ -141,7 +141,7 @@ output:
 
 </table>
 [1] "No singular fit"       "No convergence issues"
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
 ## Covariates sex and income 
 
@@ -459,7 +459,7 @@ output:
 </table>
 [1] "No singular fit"       "No convergence issues"
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 <table style="border-collapse:collapse; border:none;">
 <tr>
@@ -646,11 +646,11 @@ output:
 
 ### Lowest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 ### Highest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 # Emotional problems {.tabset}
 
@@ -780,7 +780,7 @@ output:
 
 </table>
 [1] "No singular fit"       "No convergence issues"
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 ## Covariates sex and income
 
@@ -1098,7 +1098,7 @@ output:
 </table>
 [1] "No singular fit"       "No convergence issues"
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 <table style="border-collapse:collapse; border:none;">
 <tr>
@@ -1285,11 +1285,11 @@ output:
 
 ### Lowest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 ### Highest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 # Hyperactivity {.tabset}
 
@@ -1383,7 +1383,7 @@ output:
 
 </table>
 [1] "No singular fit"       "No convergence issues"
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 ## Covariates sex and income
 
@@ -1629,7 +1629,7 @@ output:
 </table>
 [1] "No singular fit"       "No convergence issues"
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 <table style="border-collapse:collapse; border:none;">
 <tr>
@@ -1780,11 +1780,11 @@ output:
 
 ### Lowest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 ### Highest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 # Peer Problems {.tabset}
 
@@ -1932,7 +1932,7 @@ output:
 
 </table>
 [1] "No singular fit"       "No convergence issues"
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 ## Covariates sex and income
 
@@ -2286,7 +2286,7 @@ output:
 </table>
 [1] "No singular fit"       "No convergence issues"
 
-## Covariates sex, income, maternal MH, SALeSNim2 {.tabset}
+## Covariates sex, income, maternal MH, SIMD {.tabset}
 
 <table style="border-collapse:collapse; border:none;">
 <tr>
@@ -2491,11 +2491,11 @@ output:
 
 ### Lowest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 ### Highest level covariates
 
-![](C:\Users\eilee\Desktop\PhD\Year 3\Food Insecurity\FI_Trajectories\OUTPUT\GUS\GUS_FI_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](C:\Users\eilee\Desktop\PhD\YEAR3~1\FOODIN~2\FI_TRA~1\OUTPUT\GUS\GUS_FI~1/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 
 # Extract results dataframes
