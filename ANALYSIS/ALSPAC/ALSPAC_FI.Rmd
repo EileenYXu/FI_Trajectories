@@ -36,7 +36,7 @@ source(here("FUNS", "plot.R"))
 ```
 
 ```{r read data}
-dat = readRDS("DATA/ALSPAC_long.rds")
+dat = readRDS(here("DATA", "ALSPAC_long.rds"))
 
 # setting reference levels
 dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") # highest income as ref
@@ -286,8 +286,11 @@ modcovs = data.frame("covars" = covars |> map_chr(\(x) paste(x, collapse = "+"))
 
 sdqmods = list("conduct" = conductfits, "emot" = emotfits, "hyper" = hyperfits, "peer" = peerfits)
 
+# fit statistics
 results.fitstats = sdqmods |> 
   map(\(x) get_fitstats(fitlist = x, modguide = modcovs))
+
+# estimates
 results.est = sdqmods |> 
   map(\(x) get_ests(x))
 
@@ -295,6 +298,10 @@ openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "FI_FitStats.xlsx"))
 
 save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
+```
+
+```{r}
+lapply(results.fitstats, function(x) kable(x, digits= 3))
 ```
 
 
@@ -325,4 +332,8 @@ results.contr = emm.list |>
                          method = contrast_alspac, adjust = "fdr"))
 
 openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))
+```
+
+```{r}
+lapply(results.contr, function(x) kable(x, digits = 3))
 ```

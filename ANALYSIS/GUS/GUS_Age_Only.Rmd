@@ -39,7 +39,7 @@ source(here("FUNS", "plot.R"))
 # Full sample {.tabset}
 
 ```{r read data, results='asis'}
-dat = readRDS("G://users/eileen/Food_Ins/DATA/GUS_long.rds")
+dat = readRDS(here("DATA", "GUS_long.rds"))
 
 dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, peer = Dsdpr1, WTbth2 = WTbth2)
 
@@ -75,7 +75,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat, obj = conduct_fits$cubic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat, obj = conduct_fits$cubic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
 emmeans.plot
@@ -99,7 +99,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat, obj = emot_fits$cubic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat, obj = emot_fits$cubic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
 emmeans.plot
@@ -125,7 +125,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Linear)
 
 ```{r}
-plotdat = plot_dfs(dat = dat, obj = hyper_fits$linear, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat, obj = hyper_fits$linear, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
 emmeans.plot
@@ -150,7 +150,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Quartic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat, obj = peer_fits$quartic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
 emmeans.plot
@@ -182,7 +182,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Quartic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.m, obj = conduct_fits$quartic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.m, obj = conduct_fits$quartic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
 emmeans.plot
@@ -206,7 +206,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.m, obj = emot_fits$cubic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.m, obj = emot_fits$cubic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
 emmeans.plot
@@ -230,7 +230,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Linear)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.m, obj = hyper_fits$linear, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.m, obj = hyper_fits$linear, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
 emmeans.plot
@@ -254,7 +254,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.m, obj = peer_fits$cubic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.m, obj = peer_fits$cubic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
 emmeans.plot
@@ -285,7 +285,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.f, obj = conduct_fits$cubic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.f, obj = conduct_fits$cubic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
 emmeans.plot
@@ -310,7 +310,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Quadratic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.f, obj = emot_fits$quadratic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.f, obj = emot_fits$quadratic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
 emmeans.plot
@@ -335,7 +335,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Quadratic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.f, obj = hyper_fits$quadratic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.f, obj = hyper_fits$quadratic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
 emmeans.plot
@@ -360,7 +360,7 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Quartic)
 
 ```{r}
-plotdat = plot_dfs(dat = dat.f, obj = peer_fits$quartic, sw = "sweep", age_y = "Age")
+plotdat = get_preds(dat = dat.f, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
 emmeans.plot
