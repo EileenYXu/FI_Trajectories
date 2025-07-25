@@ -1,10 +1,10 @@
 ---
 title: "ALSPAC Food Insecurity and SDQ trajectories"
 output:
-  github_document:
+  html_document:
     toc: true
     toc_depth: 2
-    df_print: "paged"
+    code_folding: hide
 ---
 
 Fitting models of SDQ trajectories with food insecurity at age 5 as a 3-level factor. The polynomial terms included here may need to be edited depending on what best fits the data.\
@@ -27,7 +27,7 @@ Maternal MH score (continuous)\
 IMD quintiles\
 
 ```{r, setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, results = "asis")
 library(here)
 i_am("ANALYSIS/ALSPAC/ALSPAC_FI.Rmd")
 source(here("FUNS", "packages.R"))
@@ -36,19 +36,22 @@ source(here("FUNS", "plot.R"))
 ```
 
 ```{r read data}
-dat = readRDS("G://users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
-## miscellaneous setup
+dat = readRDS("DATA/ALSPAC_long.rds")
 
-dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") #highest income as ref
+# setting reference levels
+dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") # highest income as ref
 dat$IMD = factor(dat$IMD, ordered=FALSE) |> relevel(ref = "1") #least deprived as ref
 
 ## setup for emmeans (emm_at)
-#list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
+# list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
 emm_at = c(make_emm_at(age_y = dat$Age, agevar = "age.cent"), income = levels(dat$income), sex = levels(dat$sex), IMD = levels(dat$IMD)) 
 
 ## setup for model covariates
 # 4 covariate structures
 covars = list(NULL, c("sex", "income"), c("sex", "income", "epds"), c("sex", "income", "epds", "IMD"))
+
+plot.unadjusted = list()
+plot.adjusted = list()
 ```
 
 # Conduct problems {.tabset}
@@ -66,15 +69,14 @@ conductfits = covars |>
 sjPlot::tab_model(conductfits[[1]]$fit)
 print(conductfits[[1]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = conductfits[[1]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+c.preds = get_preds(dat = dat, obj = conductfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "foodDiff3"))
 
-conduct.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+plot.unadjusted[["conduct"]] = traj_plot(c.preds, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") +
   xlab("Age (years)")
 
-conduct.plot
-c.pred = plotdat$pred.df
+plot.unadjusted[["conduct"]]
 ```
 
 ## Covariates sex and income 
@@ -91,41 +93,21 @@ sjPlot::tab_model(conductfits[[3]]$fit)
 print(conductfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, IMD {.tabset}
+## Covariates sex, income, maternal MH, IMD
 
 ```{r results='asis'}
 sjPlot::tab_model(conductfits[[4]]$fit)
 print(conductfits[[4]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = conductfits[[4]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+c.adj = get_preds(dat = dat, obj = conductfits[[4]], age_y = "Age",
+                specs = c("age.cent", "foodDiff3"), emm_at = emm_at,
+                weights = "proportional")
 
-pred.low = list(raw.df = plotdat$raw.df, 
-                pred.df = plotdat$pred.df |>
-                  filter(IMD=="5"&income=="<100"))
-pred.hi = list(raw.df = plotdat$raw.df, 
-               pred.df = plotdat$pred.df |>
-                 filter(IMD=="1"&income==">400"))
-```
-
-### Lowest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
+plot.adjusted[["conduct"]] = traj_plot(pred.df = c.adj, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") +
   xlab("Age (years)")
 
-emmeans.plot + facet_wrap(~sex)
-```
-
-### Highest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") +
-  xlab("Age (years)")
-
-emmeans.plot + facet_wrap(~sex)
+plot.adjusted[["conduct"]]
 ```
 
 # Emotional problems {.tabset}
@@ -143,15 +125,14 @@ emotfits = covars |>
 sjPlot::tab_model(emotfits[[1]]$fit)
 print(emotfits[[1]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = emotfits[[1]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+e.preds = get_preds(dat = dat, obj = emotfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "foodDiff3"))
 
-emot.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+plot.unadjusted[["emot"]] = traj_plot(e.preds, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") +
   xlab("Age (years)")
 
-emot.plot
-e.pred = plotdat$pred.df
+plot.unadjusted[["emot"]]
 ```
 
 ## Covariates sex and income
@@ -168,41 +149,21 @@ sjPlot::tab_model(emotfits[[3]]$fit)
 print(emotfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, IMD {.tabset}
+## Covariates sex, income, maternal MH, IMD
 
 ```{r results='asis'}
 sjPlot::tab_model(emotfits[[4]]$fit)
 print(emotfits[[4]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = emotfits[[4]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+e.adj = get_preds(dat = dat, obj = emotfits[[4]], age_y = "Age",
+                specs = c("age.cent", "foodDiff3"), emm_at = emm_at,
+                weights = "proportional")
 
-pred.low = list(raw.df = plotdat$raw.df, 
-                pred.df = plotdat$pred.df |>
-                  filter(IMD=="5"&income=="<100"))
-pred.hi = list(raw.df = plotdat$raw.df, 
-               pred.df = plotdat$pred.df |>
-                 filter(IMD=="1"&income==">400"))
-```
-
-### Lowest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
+plot.adjusted[["emot"]] = traj_plot(pred.df = e.adj, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") +
   xlab("Age (years)")
 
-emmeans.plot + facet_wrap(~sex)
-```
-
-### Highest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") +
-  xlab("Age (years)")
-
-emmeans.plot + facet_wrap(~sex)
+plot.adjusted[["emot"]]
 ```
 
 # Hyperactivity {.tabset}
@@ -220,15 +181,14 @@ hyperfits = covars |>
 sjPlot::tab_model(hyperfits[[1]]$fit)
 print(hyperfits[[1]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = hyperfits[[1]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+h.preds = get_preds(dat = dat, obj = hyperfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "foodDiff3"))
 
-hyper.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+plot.unadjusted[["hyper"]] = traj_plot(h.preds, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") +
   xlab("Age (years)")
 
-hyper.plot
-h.pred = plotdat$pred.df
+plot.unadjusted[["hyper"]]
 ```
 
 ## Covariates sex and income
@@ -245,41 +205,21 @@ sjPlot::tab_model(hyperfits[[3]]$fit)
 print(hyperfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, IMD {.tabset}
+## Covariates sex, income, maternal MH, IMD
 
 ```{r results='asis'}
 sjPlot::tab_model(hyperfits[[4]]$fit)
 print(hyperfits[[4]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = hyperfits[[4]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+h.adj = get_preds(dat = dat, obj = hyperfits[[4]], age_y = "Age",
+                specs = c("age.cent", "foodDiff3"), emm_at = emm_at,
+                weights = "proportional")
 
-pred.low = list(raw.df = plotdat$raw.df, 
-                pred.df = plotdat$pred.df |>
-                  filter(IMD=="5"&income=="<100"))
-pred.hi = list(raw.df = plotdat$raw.df, 
-               pred.df = plotdat$pred.df |>
-                 filter(IMD=="1"&income==">400"))
-```
-
-### Lowest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
+plot.adjusted[["hyper"]] = traj_plot(pred.df = h.adj, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") +
   xlab("Age (years)")
 
-emmeans.plot + facet_wrap(~sex)
-```
-
-### Highest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") +
-  xlab("Age (years)")
-
-emmeans.plot + facet_wrap(~sex)
+plot.adjusted[["hyper"]]
 ```
 
 # Peer Problems {.tabset}
@@ -297,15 +237,14 @@ peerfits = covars |>
 sjPlot::tab_model(peerfits[[1]]$fit)
 print(peerfits[[1]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = peerfits[[1]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+p.preds = get_preds(dat = dat, obj = peerfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "foodDiff3"))
 
-peer.plot = traj_plot(plotdat, colour = "foodDiff3") + 
+plot.unadjusted[["peer"]] = traj_plot(c.preds, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
   xlab("Age (years)")
 
-peer.plot
-p.pred = plotdat$pred.df
+plot.unadjusted[["peer"]]
 ```
 
 ## Covariates sex and income
@@ -322,43 +261,22 @@ sjPlot::tab_model(peerfits[[3]]$fit)
 print(peerfits[[3]]$diagnostics)
 ```
 
-## Covariates sex, income, maternal MH, IMD {.tabset}
+## Covariates sex, income, maternal MH, IMD
 
 ```{r results='asis'}
 sjPlot::tab_model(peerfits[[4]]$fit)
 print(peerfits[[4]]$diagnostics)
 
-plotdat = plot_dfs(dat = dat, obj = peerfits[[4]], sw = "sweep",
-                   age_y = "Age", emm_at = emm_at)
+p.adj = get_preds(dat = dat, obj = peerfits[[4]], age_y = "Age",
+                specs = c("age.cent", "foodDiff3"), emm_at = emm_at,
+                weights = "proportional")
 
-pred.low = list(raw.df = plotdat$raw.df, 
-                pred.df = plotdat$pred.df |>
-                  filter(IMD=="5"&income=="<100"))
-pred.hi = list(raw.df = plotdat$raw.df, 
-               pred.df = plotdat$pred.df |>
-                 filter(IMD=="1"&income==">400"))
-```
-
-### Lowest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.low, colour = "foodDiff3") + 
+plot.adjusted[["peer"]] = traj_plot(pred.df = p.adj, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
   xlab("Age (years)")
 
-emmeans.plot + facet_wrap(~sex)
+plot.adjusted[["peer"]]
 ```
-
-### Highest level covariates
-
-```{r results='asis'}
-emmeans.plot = traj_plot(pred.hi, colour = "foodDiff3") + 
-  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
-  xlab("Age (years)")
-
-emmeans.plot + facet_wrap(~sex)
-```
-
 
 # Extract results dataframes
 
@@ -376,11 +294,11 @@ results.est = sdqmods |>
 openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "FI_FitStats.xlsx"))
 
-save(list = c("c.pred", "e.pred", "h.pred", "p.pred"), file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat.rda"))
+save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
 ```
 
 
-# Fit contrasts
+# Scores at ages and contrasts
 
 ```{r}
 # fit contrasts for the fully-adjusted models only
@@ -391,19 +309,20 @@ emm_at$age.cent = c(7, 9, 11, 13, 15, 18) - mean(dat$Age)
 
 # get the emmeans output object - has predicted values but also some more stuff
 emm.list = contrmods |> 
-  map(\(x) get_emm(dat = dat, obj = x, emm_at = emm_at))
+  map(\(x) get_emm(dat = dat, obj = x, emm_at = emm_at, age_y = "Age", 
+                   specs = c("age.cent", "foodDiff3"), weights = "proportional"))
 
 # set contrast grid so that it's always more FI vs less FI
 contrast_alspac = list(
-  "Slightly vs Not difficult" = c(-1, 0, 1),
-  "Fairly/Very vs Not difficult" = c(-1, 1, 0),
-  "Fairly/Very vs Slightly" = c(0, 1, -1)
+  "Slightly - Not difficult" = c(-1, 0, 1),
+  "(Fairly/Very) - Not difficult" = c(-1, 1, 0),
+  "(Fairly/Very) - Slightly" = c(0, 1, -1)
 )
 
 # run the contrasts bit
 results.contr = emm.list |> 
-  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age), emm_at = emm_at, c_grid = contrast_alspac))
+  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age),
+                         method = contrast_alspac, adjust = "fdr"))
 
 openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))
 ```
-

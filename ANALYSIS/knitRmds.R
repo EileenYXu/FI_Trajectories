@@ -1,5 +1,6 @@
 library(here)
 i_am("ANALYSIS/knitRmds.R")
+setwd(here())
 
 #knit alspac files
 rmarkdown::render(input = here("ANALYSIS", "ALSPAC", "ALSPAC_Age_Only.Rmd"), output_dir = here("OUTPUT", "ALSPAC"), output_format = "all")

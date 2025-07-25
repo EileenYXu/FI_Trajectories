@@ -70,7 +70,7 @@ get_rawdf <- function(dat, sw, age_y, outcome) {
 # producing a sequence of mean-centred ages based on the original data
 # age_y = age in years column in dat - can be the name, or the values
 # dat (optional) dataframe to find age_y column in
-# agevar(optional) = name of the centred age variable used in trajectory models
+# agevar = name of the centred age variable used in trajectory models
 
 make_emm_at <- function(dat=NULL, age_y, agevar) {
   
@@ -93,60 +93,65 @@ make_emm_at <- function(dat=NULL, age_y, agevar) {
 
 # extracts predicted values from the lme4 model based on input parameters
 # emm_at = (optional) named list of covariates included in the model formula 
-# and the values/levels which you want estimates to be generated at. 
-
+# specs = (optional) groups you want to condition on, 
+# i.e. covariate levels *NOT* to avg over. Default is no averaging.
 # obj = output from fit_lmer
 # age_y = age in years column name in dat
 # dat = data
+# weights = (optional) choose whether averages are weighted. Default is to 
+# equally weight each combination of covariate levels, see 
+# https://www.rdocumentation.org/packages/emmeans/versions/1.11.2/topics/emmeans 
+# for options
 
-get_emm <- function(dat, obj, age_y = NULL, emm_at = NULL) {
+get_emm <- function(dat, obj, age_y, emm_at = NULL, specs = NULL,
+                    weights = NULL) {
   
   agevar = get_age(form = obj$formula)
   outcome = get_outcome(form = obj$formula)
-  rhs_fixed = get_fixed(form = obj$formula)
+  
+  if (is.null(specs)) {
+    specs = get_fixed(form = obj$formula)
+  } else {specs = specs}
   
   if (is.null(emm_at)) { 
     emm_at = make_emm_at(dat = dat, age_y = age_y, agevar = agevar)
-  }
+  } else {emm_at = emm_at}
   
   # get scores at ages
-  emm <- emmeans(obj$fit, specs = as.formula(rhs_fixed), 
-                 at = emm_at, 
-                 lmer.df = "satterthwaite")
+  emm <- emmeans(obj$fit, specs = specs, at = emm_at, 
+                 lmer.df = "satterthwaite", weights = weights)
   return(emm)
 }
 
-# plot_dfs() ----
+# get_preds() ----
 
-# make df with raw values and df with predicted values, combine into a single
-# object for plotting
-# dat = data
-# sw = sweep/wave/occasion indicator
-# age_y = age in years
+# dat = dataframe
+# emm = emmeans object from get_emm
+# agevar = name of mean-centred age column in emm
+# age_y = name of dat column with original age in years
 
-plot_dfs <- function(dat, obj, sw, age_y, emm_at = NULL) {
+get_preds <- function(dat, obj, age_y, emm_at = NULL, specs = NULL,
+           weights = NULL) {
   
-  emm = get_emm(dat = dat, obj = obj, age_y = age_y, emm_at = emm_at)
+  # get_emm 
+  emm = get_emm(dat = dat, obj = obj, age_y = age_y, emm_at = emm_at,
+                specs = specs, weights = weights)
   
   # add a column with the original age values by adding back the mean age in years
-  age_m <- mean(dat[[age_y]], na.rm = T) # get the mean
   agevar = get_age(form = obj$formula)
+  preds <- as.data.frame(summary(emm))
+  preds = preds |> mutate(
+    age_vals = preds[[agevar]] + mean(dat[[age_y]], na.rm = T)) |> 
+    relocate(age_vals)
   
-  pred.df <- as.data.frame(summary(emm))
-  pred.df$age_vals = pred.df[[agevar]] + age_m
-  
-  raw.df <- get_rawdf(dat = dat, sw = sw, age_y = age_y, outcome = get_outcome(form = obj$formula))
-  
-  out <- list(raw.df = raw.df, pred.df = pred.df)
-  
-  return(out)
+  return(preds)
 }
 
 
 # pred_add() ----
 
-# function to add columns to pred.df() by splitting one column into two
-# pred.df = pred.df from plot_dfs()
+# function to add columns to pred.df by splitting one column into two
+# preds = preds from get_emm()
 # string = name of column to be split
 #     this column should be in the format [v1].[v2]
 # v1 = name of first new column
@@ -162,14 +167,14 @@ pred_add <- function(pred.df, string, v1, v2) {
 
 # traj_plot() ----
 
-# plotdat = output from plot_dfs
+# plotdat = output from get_emm - dataframe of predicted values ("emmean"),
+# lower CI  ("lower.CL"), upper CI ("upper.CL"), age in years ("age_y")
 # makes plot with predicted trajectory
 # still need to manually specify axis labels etc
+# colour is the name of the grouping variable
 
-traj_plot <- function(plotdat, colour=NULL) {
-  pred.df = plotdat$pred.df
-  raw.df = plotdat$raw.df
-  
+traj_plot <- function(pred.df, colour=NULL) {
+
   if (is.null(colour)==T) {
     ggplot() + 
       geom_line(data = pred.df,
@@ -178,10 +183,7 @@ traj_plot <- function(plotdat, colour=NULL) {
       geom_ribbon(data = pred.df,
                   aes(x = age_vals, y = emmean,
                       ymin = lower.CL, ymax = upper.CL),
-                  alpha = 0.2, na.rm = T, fill = "#0072B2") +
-      geom_point(data = raw.df, aes(x=Age, y=Phenotype))+
-      geom_line(data = raw.df, aes(x=Age, y=Phenotype)) +
-      geom_errorbar(data = raw.df, aes(x=Age, ymin = lower, ymax = upper))
+                  alpha = 0.2, na.rm = T, fill = "#0072B2")
   } else {
     ggplot() + 
       geom_line(data = pred.df,
@@ -190,25 +192,23 @@ traj_plot <- function(plotdat, colour=NULL) {
       geom_ribbon(data = pred.df,
                   aes(x = age_vals, y = emmean, fill = !!sym(colour),
                       ymin = lower.CL, ymax = upper.CL),
-                  alpha = 0.2, na.rm = T) +
-      geom_point(data = raw.df, aes(x=Age, y=Phenotype))+
-      geom_line(data = raw.df, aes(x=Age, y=Phenotype)) +
-      geom_errorbar(data = raw.df, aes(x=Age, ymin = lower, ymax = upper))
+                  alpha = 0.2, na.rm = T)
   }
 }
 
 
-# contrasts ----
+# mod_contrasts ----
 
 # emm = emm from get_emm - make sure you have whole numbers for age in your emm_at
 # age_m = mean age to reverse mean-centring 
-# c_grid = contrast grid to compare levels within a single variable
 # simple = variable to use for contrasts, levels correspond to c_grid
+# method = either pre-specified contrast grid, or a string
+# adjust = string to specify how to adjust p.values
 
-mod_contrasts <- function(emm, simple, age_m, emm_at, c_grid) {
+mod_contrasts <- function(emm, simple, age_m, method, adjust) {
   
-  emm_comparisons = contrast(emm, method = c_grid, simple = simple) |> broom::tidy()
-  
+  emm_comparisons = contrast(emm, simple = simple, method = method,
+                             adjust = adjust) |> broom::tidy()
   #add age column
   emm_comparisons$Age = emm_comparisons$age.cent + age_m
   
