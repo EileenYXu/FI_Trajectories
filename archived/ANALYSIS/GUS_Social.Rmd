@@ -1,0 +1,293 @@
+---
+title: "Parental social support in GUS"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    keep_md: true
+---
+
+## Parental social support as a protective factor
+
+Trajectories of SDQ with parental support to investigate whether parental social support could be protective.
+  
+"MdSNsp01" - Overall, how do you feel about the amount of support or help you get from friends or family living elsewhere?  
+  1: I get enough help  
+  2: I don't get enough help  
+  3: I don't get any help  
+  4: I don't need any help  
+
+Coded as a binary variable of "Enough" vs "Not Enough". "Do not need help" is removed too.
+
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
+library(here)
+i_am("ANALYSIS/GUS/GUS_Social.Rmd")
+source(here("FUNS", "packages.R"))
+source(here("FUNS", "mods.R"))
+source(here("FUNS", "plot.R"))
+```
+
+```{r read data}
+dat = readRDS("G://users/eileen/Food_Ins/DATA/GUS_long_FS.rds")
+```
+
+# Full sample {.tabset}
+
+```{r}
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="cubic","emot" ="cubic","hyper"= "linear","peer"= "quartic")
+
+modfits = map2(sdq, modtypes, 
+               \(x, y) fit_lmer(dat = dat, outcome = x, age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = y,
+                  grp = "help_bin"))
+
+modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
+fullsamp.fitstats = get_fitstats(modfits, modguide = modguide)
+fullsamp.est = get_ests(modfits)
+outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 8), 
+                                   rep("hyper", 4), rep("peer", 10)))
+fullsamp.est = cbind(outcome, fullsamp.est) |> relocate(Outcome)
+```
+
+## Conduct
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$conduct$fit)
+print(modfits$conduct$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = modfits$conduct, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Conduct")
+
+emmeans.plot
+```
+
+
+## Emotional
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$emot$fit)
+print(modfits$emot$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = modfits$emot, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Emotional")
+
+emmeans.plot
+```
+
+## Hyperactivity
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$hyper$fit)
+print(modfits$hyper$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = modfits$hyper, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Hyper")
+
+emmeans.plot
+```
+
+## Peer Prob
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$peer$fit)
+print(modfits$peer$diagnostics)
+
+plotdat = plot_dfs(dat = dat, obj = modfits$peer, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Peer")
+
+emmeans.plot
+```
+
+# Males {.tabset}
+
+```{r}
+dat.m = dat %>% filter(Sex == "M")
+dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
+
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="quartic","emot" ="cubic","hyper"= "linear","peer"= "cubic")
+
+modfits = map2(sdq, modtypes, 
+               \(x, y) fit_lmer(dat = dat.m, outcome = x, age = "age.cent",
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = y,
+                  grp = "help_bin"))
+
+modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
+m.fitstats = get_fitstats(modfits, modguide = modguide)
+m.est = get_ests(modfits)
+outcome = data.frame("Outcome" = c(rep("conduct", 10), rep("emot", 8), 
+                                   rep("hyper", 4), rep("peer", 8)))
+m.est = cbind(outcome, m.est) |> relocate(Outcome)
+```
+
+## Conduct
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$conduct$fit)
+print(modfits$conduct$diagnostics)
+
+plotdat = plot_dfs(dat = dat.m, obj = modfits$conduct, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Conduct")
+
+emmeans.plot
+```
+
+
+## Emotional
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$emot$fit)
+print(modfits$emot$diagnostics)
+
+plotdat = plot_dfs(dat = dat.m, obj = modfits$emot, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Emotional")
+
+emmeans.plot
+```
+
+## Hyperactivity
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$hyper$fit)
+print(modfits$hyper$diagnostics)
+
+plotdat = plot_dfs(dat = dat.m, obj = modfits$hyper, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Hyper")
+
+emmeans.plot
+```
+
+## Peer Prob
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$peer$fit)
+print(modfits$peer$diagnostics)
+
+plotdat = plot_dfs(dat = dat.m, obj = modfits$peer, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Peer")
+
+emmeans.plot
+```
+
+
+# Females {.tabset}
+
+```{r}
+dat.f = dat %>% filter(Sex == "F")
+dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
+
+sdq = c("conduct" = "Dsdco1", "emot" = "Dsdem1","hyper"= "Dsdhy1","peer"= "Dsdpr1")
+modtypes = c("conduct"="cubic","emot" ="quadratic","hyper"= "quadratic","peer"= "quartic")
+
+modfits = map2(sdq, modtypes, 
+               \(x, y) fit_lmer(dat = dat.f, outcome = x, age = "age.cent",
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = y,
+                  grp = "help_bin"))
+
+modguide = data.frame("Outcome" = c("conduct", "emot", "hyper", "peer"))
+f.fitstats = get_fitstats(modfits, modguide = modguide)
+f.est = get_ests(modfits)
+outcome = data.frame("Outcome" = c(rep("conduct", 8), rep("emot", 6), 
+                                   rep("hyper", 6), rep("peer", 10)))
+f.est = cbind(outcome, f.est) |> relocate(Outcome)
+```
+
+## Conduct
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$conduct$fit)
+print(modfits$conduct$diagnostics)
+
+plotdat = plot_dfs(dat = dat.f, obj = modfits$conduct, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Conduct")
+
+emmeans.plot
+```
+
+
+## Emotional
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$emot$fit)
+print(modfits$emot$diagnostics)
+
+plotdat = plot_dfs(dat = dat.f, obj = modfits$emot, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Emotional")
+
+emmeans.plot
+```
+
+## Hyperactivity
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$hyper$fit)
+print(modfits$hyper$diagnostics)
+
+plotdat = plot_dfs(dat = dat.f, obj = modfits$hyper, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Hyper")
+
+emmeans.plot
+```
+
+## Peer Prob
+
+```{r results='asis'}
+sjPlot::tab_model(modfits$peer$fit)
+print(modfits$peer$diagnostics)
+
+plotdat = plot_dfs(dat = dat.f, obj = modfits$peer, sw = "sweep",
+                   age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat, colour = "help_bin") + 
+  xlab("Age") + ylab("SDQ Peer")
+
+emmeans.plot
+```
+
+
+# Save everything
+
+```{r}
+results.est = list("All" = fullsamp.est, "Male" = m.est, "Female" = f.est)
+results.fitstats = list("All" = fullsamp.fitstats, "Male" = m.fitstats, "Female" = f.fitstats)
+
+openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "Social_Estimates.xlsx"))
+openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "Social_FitStats.xlsx"))
+```
+

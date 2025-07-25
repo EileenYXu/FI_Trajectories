@@ -1,0 +1,313 @@
+---
+title: "Weighted analyses of SDQ trajectories following FI"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    code_folding: hide
+---
+
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
+library(here)
+i_am("ANALYSIS/GUS/GUS_FI.Rmd")
+source(here("FUNS", "packages.R"))
+source(here("FUNS", "mods.R"))
+source(here("FUNS", "plot.R"))
+```
+
+
+```{r read data}
+dat = readRDS(here("DATA", "GUS_long.rds"))
+
+## setup for emmeans (emm_at)
+#list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
+emm_at = c(make_emm_at(age_y = dat$Age, agevar = "age.cent"), DeEqv5 = levels(dat$DeEqv5), sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2)) 
+
+## setup for model covariates
+# 4 covariate structures
+covars = list(NULL, c("Sex", "DeEqv5"), c("Sex", "DeEqv5", "DeSf12mn"), c("Sex", "DeEqv5", "DeSf12mn", "ALeSNim2"))
+
+plot.unadjusted = list()
+plot.adjusted = list()
+```
+
+# Conduct problems {.tabset}
+
+```{r}
+conductfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="Dsdco1", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = "cubic",
+                  grp = "MeFaff3lvl", covs = x))
+```
+
+## No covariates
+
+```{r results='asis'}
+sjPlot::tab_model(conductfits[[1]]$fit)
+print(conductfits[[1]]$diagnostics)
+
+c.preds = get_preds(dat = dat, obj = conductfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "MeFaff3lvl"))
+
+plot.unadjusted[["conduct"]] = traj_plot(c.preds, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") +
+  xlab("Age (years)")
+
+plot.unadjusted[["conduct"]]
+```
+
+## Covariates sex and income 
+
+```{r results='asis'}
+sjPlot::tab_model(conductfits[[2]]$fit)
+print(conductfits[[2]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH
+
+```{r results='asis'}
+sjPlot::tab_model(conductfits[[3]]$fit)
+print(conductfits[[3]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH, SIMD
+
+```{r results='asis'}
+sjPlot::tab_model(conductfits[[4]]$fit)
+print(conductfits[[4]]$diagnostics)
+
+c.adj = get_preds(dat = dat, obj = conductfits[[4]], age_y = "Age",
+                specs = c("age.cent", "MeFaff3lvl"), emm_at = emm_at,
+                weights = "proportional")
+
+plot.adjusted[["conduct"]] = traj_plot(pred.df = c.adj, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Conduct") +
+  xlab("Age (years)")
+
+plot.adjusted[["conduct"]]
+```
+
+# Emotional problems {.tabset}
+
+```{r}
+emotfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="Dsdem1", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = "cubic",
+                  grp = "MeFaff3lvl", covs = x))
+```
+
+## No covariates 
+
+```{r results='asis'}
+sjPlot::tab_model(emotfits[[1]]$fit)
+print(emotfits[[1]]$diagnostics)
+
+e.preds = get_preds(dat = dat, obj = emotfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "MeFaff3lvl"))
+
+plot.unadjusted[["emot"]] = traj_plot(e.preds, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") +
+  xlab("Age (years)")
+
+plot.unadjusted[["emot"]]
+```
+
+## Covariates sex and income
+
+```{r}
+sjPlot::tab_model(emotfits[[2]]$fit)
+print(emotfits[[2]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH
+
+```{r}
+sjPlot::tab_model(emotfits[[3]]$fit)
+print(emotfits[[3]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH, SIMD
+
+```{r results='asis'}
+sjPlot::tab_model(emotfits[[4]]$fit)
+print(emotfits[[4]]$diagnostics)
+
+e.adj = get_preds(dat = dat, obj = emotfits[[4]], age_y = "Age",
+                specs = c("age.cent", "MeFaff3lvl"), emm_at = emm_at,
+                weights = "proportional")
+
+plot.adjusted[["emot"]] = traj_plot(pred.df = e.adj, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Emotional") +
+  xlab("Age (years)")
+
+plot.adjusted[["emot"]]
+```
+
+
+# Hyperactivity {.tabset}
+
+```{r}
+hyperfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="Dsdhy1", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = "linear",
+                  grp = "MeFaff3lvl", covs = x))
+```
+
+## No covariates 
+
+```{r results='asis'}
+sjPlot::tab_model(hyperfits[[1]]$fit)
+print(hyperfits[[1]]$diagnostics)
+
+h.preds = get_preds(dat = dat, obj = hyperfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "MeFaff3lvl"))
+
+plot.unadjusted[["hyper"]] = traj_plot(h.preds, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") +
+  xlab("Age (years)")
+
+plot.unadjusted[["hyper"]]
+```
+
+## Covariates sex and income
+
+```{r}
+sjPlot::tab_model(hyperfits[[2]]$fit)
+print(hyperfits[[2]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH
+
+```{r}
+sjPlot::tab_model(hyperfits[[3]]$fit)
+print(hyperfits[[3]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH, SIMD
+
+```{r results='asis'}
+sjPlot::tab_model(hyperfits[[4]]$fit)
+print(hyperfits[[4]]$diagnostics)
+
+h.adj = get_preds(dat = dat, obj = hyperfits[[4]], age_y = "Age",
+                specs = c("age.cent", "MeFaff3lvl"), emm_at = emm_at,
+                weights = "proportional")
+
+plot.adjusted[["hyper"]] = traj_plot(pred.df = h.adj, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Hyperactivity") +
+  xlab("Age (years)")
+
+plot.adjusted[["hyper"]]
+```
+
+# Peer Problems {.tabset}
+
+```{r}
+peerfits = covars |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="Dsdpr1", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = "quartic",
+                  grp = "MeFaff3lvl", covs = x))
+```
+
+## No covariates 
+
+```{r results='asis'}
+sjPlot::tab_model(peerfits[[1]]$fit)
+print(peerfits[[1]]$diagnostics)
+
+p.preds = get_preds(dat = dat, obj = peerfits[[1]], age_y = "Age", 
+                    emm_at = emm_at, specs = c("age.cent", "MeFaff3lvl"))
+
+plot.unadjusted[["peer"]] = traj_plot(c.preds, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
+  xlab("Age (years)")
+
+plot.unadjusted[["peer"]]
+```
+
+## Covariates sex and income
+
+```{r}
+sjPlot::tab_model(peerfits[[2]]$fit)
+print(peerfits[[2]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH
+
+```{r}
+sjPlot::tab_model(peerfits[[3]]$fit)
+print(peerfits[[3]]$diagnostics)
+```
+
+## Covariates sex, income, maternal MH, SIMD
+
+```{r results='asis'}
+sjPlot::tab_model(peerfits[[4]]$fit)
+print(peerfits[[4]]$diagnostics)
+
+p.adj = get_preds(dat = dat, obj = peerfits[[4]], age_y = "Age",
+                specs = c("age.cent", "MeFaff3lvl"), emm_at = emm_at,
+                weights = "proportional")
+
+plot.adjusted[["peer"]] = traj_plot(pred.df = p.adj, colour = "MeFaff3lvl") + 
+  scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
+  xlab("Age (years)")
+
+plot.adjusted[["peer"]]
+```
+
+
+# Extract results dataframes
+
+```{r}
+# column with model covariates for renaming
+modcovs = data.frame("covars" = covars |> map_chr(\(x) paste(x, collapse = "+")))
+
+sdqmods = list("conduct" = conductfits, "emot" = emotfits, "hyper" = hyperfits, "peer" = peerfits)
+
+results.fitstats = sdqmods |> 
+  map(\(x) get_fitstats(fitlist = x, modguide = modcovs))
+results.est = sdqmods |> 
+  map(\(x) get_ests(x))
+
+openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "FI_Estimates.xlsx"))
+openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "FI_FitStats.xlsx"))
+
+save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/GUS", "GUS_plotdat_adjusted.rda"))
+```
+
+
+# Fit contrasts
+
+```{r}
+# fit contrasts for the fully-adjusted models only
+contrmods = list("conduct" = conductfits[[4]], "emot" = emotfits[[4]], "hyper" = hyperfits[[4]], "peer" = peerfits[[4]])
+
+# fit contrasts at age 5, 7, 9, 11, 13, 15
+emm_at$age.cent = c(5, 7, 9, 11, 13, 15) - mean(dat$Age)
+
+# get the emmeans output object - has predicted values but also some more stuff
+emm.list = contrmods |> 
+  map(\(x) get_emm(dat = dat, obj = x, emm_at = emm_at, age_y = "Age", 
+                   specs = c("age.cent", "MeFaff3lvl"), weights = "proportional"))
+
+# set contrast grid so that it's always more FI vs less FI
+contrast_gus = list(
+  "(A little) - Not at all" = c(-1, 0, 1),
+  "(A lot/fair amount) - Not at all" = c(-1, 1, 0),
+  "(A lot/fair amount) - A little" = c(0, 1, -1)
+)
+
+# run the contrasts bit
+results.contr = emm.list |> 
+  map(\(x) mod_contrasts(emm = x, simple = "MeFaff3lvl", age_m = mean(dat$Age), method = contrast_gus, adjust = "fdr"))
+
+openxlsx::write.xlsx(results.contr, here("OUTPUT/GUS", "FI_Contrasts.xlsx"))
+```
+
+```{r}
+lapply(results.contr, function(x) kable(x, digits = 3))
+```
+

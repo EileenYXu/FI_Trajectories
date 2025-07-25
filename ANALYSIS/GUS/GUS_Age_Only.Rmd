@@ -1,0 +1,367 @@
+---
+title: "GUS SDQ trajectories (age only)"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+editor_options: 
+  chunk_output_type: inline
+---
+
+Identifying which polynomial terms to include in longitudinal models of SDQ domains for the whole sample and for males and females separately. This code fits 4 models for each SDQ domain and performs model comparisons to compare fit metrics e.g. AIC, BIC.\
+   
+Linear model: SDQ ~ age.cent + (1 + age.cent | ID)\
+Quadratic model: SDQ ~ age.cent + age.cent^2 + (1 + age.cent | ID)\
+Cubic model:  SDQ ~ age.cent + age.cent^2 + age.cent^3 + (1 + age.cent | ID)\
+Quartic model:  SDQ ~ age.cent + age.cent^2 + age.cent^3 + age.cent^4 + (1 + age.cent | ID)\
+  
+Input data (dat) should be in long format, with the following variables (at minimum):\
+
+- unique participant ID\
+- identifier for each timepoint\
+- age in years\
+- mean-centred age (helpful for reducing convergence issues)\
+- sex (could be sex at birth, could be gender identity - in this analysis it's a binary measure)\
+- SDQ scores (conduct, emotional problems, hyperactivity, peer problems)\
+
+Optionally, dat can include sample weights too.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
+library(here)
+i_am("ANALYSIS/GUS/GUS_Age_Only.Rmd")
+source(here("FUNS", "packages.R"))
+source(here("FUNS", "mods.R"))
+source(here("FUNS", "plot.R"))
+```
+
+# Full sample {.tabset}
+
+```{r read data, results='asis'}
+dat = readRDS(here("DATA", "GUS_long.rds"))
+
+dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, peer = Dsdpr1, WTbth2 = WTbth2)
+
+sumtable = dat %>% group_by(across(sweep)) %>%
+          summarise(N = n(),
+                    age = m_sd(Age),
+                    Conduct = m_sd(conduct),
+                    Emot = m_sd(emot),
+                    Hyper = m_sd(hyper),
+                    Peer = m_sd(peer))
+
+kbl(sumtable) %>%
+  kable_styling(full_width = F)
+
+modTypes = c("linear", "quadratic", "cubic", "quartic")
+```
+
+## Conduct problems
+
+### Fit models
+
+```{r}
+conduct_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="conduct", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Cubic)
+
+```{r}
+plotdat = get_preds(dat = dat, obj = conduct_fits$cubic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot
+```
+
+## Emotional problems
+
+### Fit models
+
+```{r}
+emot_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="emot", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Cubic)
+
+```{r}
+plotdat = get_preds(dat = dat, obj = emot_fits$cubic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot
+```
+
+
+## Hyperactivity
+
+### Fit models
+
+```{r}
+hyper_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="hyper", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+
+### Plot model (Linear)
+
+```{r}
+plotdat = get_preds(dat = dat, obj = hyper_fits$linear, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot
+```
+
+
+## Peer problems
+
+### Fit models
+
+```{r}
+peer_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat, outcome ="peer", age = "age.cent",
+                  id = "Idnumber", wt = dat$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Quartic)
+
+```{r}
+plotdat = get_preds(dat = dat, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot
+```
+
+
+# Male only {.tabset}
+
+```{r subset male}
+dat.m = dat %>% filter(Sex == "M")
+dat.m$age.cent = dat.m$Age - mean(dat.m$Age)
+```
+
+## Conduct problems
+
+### Fit models
+
+```{r}
+conduct_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.m, outcome ="conduct", age = "age.cent",
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Quartic)
+
+```{r}
+plotdat = get_preds(dat = dat.m, obj = conduct_fits$quartic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot
+```
+
+## Emotional problems
+
+### Fit models
+
+```{r}
+emot_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.m, outcome ="emot", age = "age.cent",
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Cubic)
+
+```{r}
+plotdat = get_preds(dat = dat.m, obj = emot_fits$cubic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot
+```
+
+## Hyperactivity
+
+### Fit models
+
+```{r}
+hyper_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.m, outcome ="hyper", age = "age.cent",
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Linear)
+
+```{r}
+plotdat = get_preds(dat = dat.m, obj = hyper_fits$linear, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot
+```
+
+## Peer problems
+
+### Fit models
+
+```{r}
+peer_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.m, outcome ="peer", age = "age.cent",
+                  id = "Idnumber", wt = dat.m$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Cubic)
+
+```{r}
+plotdat = get_preds(dat = dat.m, obj = peer_fits$cubic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot
+```
+
+# Female only {.tabset}
+
+```{r}
+dat.f = dat %>% filter(Sex == "F")
+dat.f$age.cent = dat.f$Age - mean(dat.f$Age)
+```
+
+## Conduct problems
+
+### Fit models
+
+```{r}
+conduct_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.f, outcome ="conduct", age = "age.cent",
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Cubic)
+
+```{r}
+plotdat = get_preds(dat = dat.f, obj = conduct_fits$cubic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot
+```
+
+
+## Emotional problems
+
+### Fit models
+
+```{r}
+emot_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.f, outcome ="emot", age = "age.cent",
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Quadratic)
+
+```{r}
+plotdat = get_preds(dat = dat.f, obj = emot_fits$quadratic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot
+```
+
+
+## Hyperactivity
+
+### Fit models
+
+```{r}
+hyper_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.f, outcome ="hyper", age = "age.cent",
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Quadratic)
+
+```{r}
+plotdat = get_preds(dat = dat.f, obj = hyper_fits$quadratic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot
+```
+
+
+## Peer problems
+
+### Fit models
+
+```{r}
+peer_fits = modTypes |> 
+  map(\(x) fit_lmer(dat = dat.f, outcome ="peer", age = "age.cent",
+                  id = "Idnumber", wt = dat.f$WTbth2, modType = x)) |> `names<-`(modTypes)
+
+fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
+
+do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+```
+
+### Plot model (Quartic)
+
+```{r}
+plotdat = get_preds(dat = dat.f, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
+
+emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot
+```
