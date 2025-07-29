@@ -297,6 +297,7 @@ results.est = sdqmods |>
 openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "FI_FitStats.xlsx"))
 
+save(list = c("c.pred", "e.pred", "h.pred", "p.pred"), file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
 save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
 ```
 
@@ -332,8 +333,21 @@ results.contr = emm.list |>
                          method = contrast_alspac, adjust = "fdr"))
 
 openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))
+
+# save the predicted scores at each age
+results.scores = emm.list |> 
+  map(\(x) broom::tidy(x, conf.int = T)) |> 
+  map(\(x) mutate(x, Age = age.cent + mean(dat$Age))) |> 
+  map(\(x) relocate(x, Age))
+
+openxlsx::write.xlsx(results.scores, here("OUTPUT/ALSPAC", "FI_Scores.xlsx"))
 ```
 
 ```{r}
 lapply(results.contr, function(x) kable(x, digits = 3))
 ```
+
+```{r}
+lapply(results.scores, function(x) kable(x, digits = 3))
+```
+

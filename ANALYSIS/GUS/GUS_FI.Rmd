@@ -275,7 +275,12 @@ results.est = sdqmods |>
 openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "FI_FitStats.xlsx"))
 
+save(list = c("c.pred", "e.pred", "h.pred", "p.pred"), file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
 save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/GUS", "GUS_plotdat_adjusted.rda"))
+```
+
+```{r}
+lapply(results.fitstats, function(x) kable(x, digits= 3))
 ```
 
 
@@ -305,9 +310,20 @@ results.contr = emm.list |>
   map(\(x) mod_contrasts(emm = x, simple = "MeFaff3lvl", age_m = mean(dat$Age), method = contrast_gus, adjust = "fdr"))
 
 openxlsx::write.xlsx(results.contr, here("OUTPUT/GUS", "FI_Contrasts.xlsx"))
+
+results.scores = emm.list |> 
+  map(\(x) broom::tidy(x, conf.int = T)) |> 
+  map(\(x) mutate(x, Age = age.cent + mean(dat$Age))) |> 
+  map(\(x) relocate(x, Age))
+
+openxlsx::write.xlsx(results.scores, here("OUTPUT/GUS", "FI_Scores.xlsx"))
 ```
 
 ```{r}
 lapply(results.contr, function(x) kable(x, digits = 3))
+```
+
+```{r}
+lapply(results.scores, function(x) kable(x, digits = 3))
 ```
 

@@ -208,7 +208,7 @@ traj_plot <- function(pred.df, colour=NULL) {
 mod_contrasts <- function(emm, simple, age_m, method, adjust) {
   
   emm_comparisons = contrast(emm, simple = simple, method = method,
-                             adjust = adjust) |> broom::tidy()
+                             adjust = adjust) |> broom::tidy(conf.int = T)
   #add age column
   emm_comparisons$Age = emm_comparisons$age.cent + age_m
   
