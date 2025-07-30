@@ -33,3 +33,66 @@ my_theme <- function(base_size = 12, base_family = ""){
 }
 
 theme_set(my_theme()) # use new theme
+
+# Generic useful functions ----
+
+# m_sd() ----
+
+# super simple function, just pastes into M (SD) format to 2 dp
+
+m_sd <- function(var){
+  m = mean(var, na.rm = T) |> round(digits = 2)
+  sd = sd(var, na.rm = T) |> round(digits = 2)
+  val = paste0(m, " (", sd, ")")
+}
+
+# get_sum_stats() ----
+
+# generic function to extract valid N for each variable and summary stat as mean (SD) or n (%) for factors
+
+get_sum_stats <- function(dat, vars) {
+  summarydf <- data.frame()
+  
+  for (v in vars) {
+    variable <- dat[,v]
+    n_total <- length(which(is.na(variable)==F))
+    
+    if (is.numeric(variable)==T) {
+      
+      #format as mean (sd)
+      descr <- m_sd(variable)
+      out <- data.frame("Var" = v, "n_total" = n_total, 
+                        "desc" = descr)
+      
+      # if var is a factor, each level needs to be dealt with separately
+    } else if (is.factor(variable)) {
+      
+      levs <- levels(variable)
+      tab_var <- table(variable)
+      out <- data.frame()
+      
+      # stat1 is count for the level, stat2 is percentage of total
+      for (lev in levs) {
+        #format as count (%)
+        descr <- paste0(as.numeric(tab_var[lev]),
+                        " (", round((stat1/n_total)*100, digits = 2), 
+                        "%)")
+        outrow <- data.frame("Var" = paste0(v, "_", lev), "n_total" = n_total,
+                             "desc" = descr)
+        out <- rbind(out, outrow)
+      }
+    }
+    summarydf <- rbind(summarydf, out)
+  }
+  return(summarydf)
+}
+
+# function to paste CI with estimate in the format "estimate [lower - upper]"
+addci <- function(dat, est, lower, upper) {
+  # first round to 2 d.p.
+  df = dat |> mutate(across(where(is.numeric), \(x) round(x, digits = 2)))
+  # now paste into a new column
+  df = df |> mutate(
+    comb = paste0(!!sym(est), " [", !!sym(lower), " - ", !!sym(upper), "]")
+  )
+}
