@@ -13,13 +13,13 @@ source(here("FUNS", "plot.R"))
 
 load(file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat.rda"))
 
-c = traj_plot(c.pred, "foodDiff3") + labs(title = "Conduct Problems", y = "SDQ score", x = "Age (years)") #+ theme(legend.position = "bottom", legend.direction = "horizontal", legend.title = element_blank())
+c = traj_plot(c.preds, "foodDiff3") + labs(title = "Conduct Problems", y = "SDQ score", x = "Age (years)") #+ theme(legend.position = "bottom", legend.direction = "horizontal", legend.title = element_blank())
 
-e = traj_plot(e.pred, "foodDiff3") + labs(title="Emotional Symptoms", y = "SDQ score", x = "Age (years)")
+e = traj_plot(e.preds, "foodDiff3") + labs(title="Emotional Symptoms", y = "SDQ score", x = "Age (years)")
 
-h = traj_plot(h.pred, "foodDiff3") + labs(title = "Hyperactivity/Inattention", y = "SDQ score", x = "Age (years)")
+h = traj_plot(h.preds, "foodDiff3") + labs(title = "Hyperactivity/Inattention", y = "SDQ score", x = "Age (years)")
 
-p = traj_plot(p.pred, "foodDiff3") + labs(title = "Peer Problems", y = "SDQ score", x = "Age (years)")
+p = traj_plot(p.preds, "foodDiff3") + labs(title = "Peer Problems", y = "SDQ score", x = "Age (years)")
 
 fig1 = wrap_plots(list(c,e,h,p), guides = "collect", axes = "collect") & theme(text = element_text(size = 18), legend.position = "none")
 
@@ -29,10 +29,10 @@ ggsave(fig1, filename = here("OUTPUT/ALSPAC", "ALSPAC_Fig.svg"), height = 8, wid
 
 load(file = here("OUTPUT/GUS", "GUS_plots.rda"))
 
-c = traj_plot(c.pred, "MeFaff3lvl") + labs(title = "Conduct Problems", y = "SDQ score", x = "Age (years)") 
-e = traj_plot(e.pred, "MeFaff3lvl") + labs(title="Emotional Symptoms", y = "SDQ score", x = "Age (years)") 
-h = traj_plot(h.pred, "MeFaff3lvl") + labs(title = "Hyperactivity/Inattention", y = "SDQ score", x = "Age (years)") 
-p = traj_plot(p.pred, "MeFaff3lvl") + labs(title = "Peer Problems", y = "SDQ score", x = "Age (years)") 
+c = traj_plot(c.preds, "MeFaff3lvl") + labs(title = "Conduct Problems", y = "SDQ score", x = "Age (years)") 
+e = traj_plot(e.preds, "MeFaff3lvl") + labs(title="Emotional Symptoms", y = "SDQ score", x = "Age (years)") 
+h = traj_plot(h.preds, "MeFaff3lvl") + labs(title = "Hyperactivity/Inattention", y = "SDQ score", x = "Age (years)") 
+p = traj_plot(p.preds, "MeFaff3lvl") + labs(title = "Peer Problems", y = "SDQ score", x = "Age (years)") 
 
 fig2 = wrap_plots(list(c,e,h,p), guides = "collect", axes = "collect") & theme(text = element_text(size = 18), legend.position = "none")
 
@@ -75,7 +75,7 @@ plotlist[c(3,7)] = plotlist[c(3,7)] |>
   map(\(x) x + scale_y_continuous(limits = c(1.7, 4.2), n.breaks = 5, breaks = waiver()))
 # peer
 plotlist[c(4,8)] = plotlist[c(4,8)] |> 
-  map(\(x) x + scale_y_continuous(limits = c(0.3, 2.75), breaks = c(0.5, 1, 1.5, 2, 2.5)))
+  map(\(x) x + scale_y_continuous(limits = c(0.7, 2.6), breaks = c(0.5, 1, 1.5, 2, 2.5)))
 
 # assemble into 2 rows, 4 columns
 ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, guides = "collect", axes = "collect") + plot_annotation(tag_levels = "A") & theme(legend.position = "none", plot.margin = margin(10,10,10,10,"pt")) & ylab(NULL) 
@@ -156,4 +156,3 @@ fig
 
 ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.svg"), height = 6, width = 12, units = "in")
 ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.png"), height = 6, width = 12, units = "in")
-

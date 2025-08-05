@@ -226,7 +226,7 @@ saveRDS(final_alspac, file="alspac_weighted.rds")
 
 # make new column names for long columns
 
-dat = readRDS("alspac_weighted.rds")
+dat = readRDS("/exports/eddie/scratch/s1659680/alspac_weighted.rds")
 
 dat = dat |> 
   rename_with(
@@ -263,7 +263,8 @@ dat.long = dat |>
                names_to = c("sweep", ".value"))
 
 ##For consistent sample size, restrict sample to those with complete SDQ data (listwise deletion of missing rows - i.e. if they missed a timepoint they can still be included), food insecurity data and covariate data
-completecols = c("age", "conduct", "emot", "hyper", "peer", "prosoc")
+completecols = c("age", "conduct", "emot", "hyper", "peer", "prosoc", "sex",
+                 "income", "foodDiff", "IMD", "epds")
 dat.long = dat.long[complete.cases(dat.long[, completecols]),]
 dat.long$Age = dat.long$age/12 #change age into years
 

@@ -145,10 +145,10 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
   `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
 ```
 
-### Plot model (Quartic)
+### Plot model (Cubic)
 
 ```{r}
-plotdat = get_preds(dat = dat, obj = peer_fits$quartic, age_y = "Age",
+plotdat = get_preds(dat = dat, obj = peer_fits$cubic, age_y = "Age",
                     specs = "age.cent")
 
 emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
@@ -250,10 +250,10 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
   `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
 ```
 
-### Plot model (Quartic)
+### Plot model (Cubic)
 
 ```{r}
-plotdat = get_preds(dat = dat.m, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
+plotdat = get_preds(dat = dat.m, obj = peer_fits$cubic, specs = "age.cent", age_y = "Age")
 
 emmeans.plot = traj_plot(plotdat) + scale_x_continuous(name = "Age", breaks = seq(6, 18, 3)) + ylab("SDQ Peer")
 emmeans.plot

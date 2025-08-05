@@ -54,10 +54,10 @@ get_sum_stats <- function(dat, vars) {
   summarydf <- data.frame()
   
   for (v in vars) {
-    variable <- dat[,v]
+    variable <- dat[[paste0(v)]]
     n_total <- length(which(is.na(variable)==F))
     
-    if (is.numeric(variable)==T) {
+    if (is.numeric(variable)) {
       
       #format as mean (sd)
       descr <- m_sd(variable)
@@ -68,14 +68,13 @@ get_sum_stats <- function(dat, vars) {
     } else if (is.factor(variable)) {
       
       levs <- levels(variable)
-      tab_var <- table(variable)
+      tab_var <- table(variable) # counts for each level
       out <- data.frame()
       
-      # stat1 is count for the level, stat2 is percentage of total
       for (lev in levs) {
         #format as count (%)
         descr <- paste0(as.numeric(tab_var[lev]),
-                        " (", round((stat1/n_total)*100, digits = 2), 
+                        " (", round((tab_var[lev]/n_total)*100, digits = 2), 
                         "%)")
         outrow <- data.frame("Var" = paste0(v, "_", lev), "n_total" = n_total,
                              "desc" = descr)

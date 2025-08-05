@@ -157,21 +157,3 @@ dat_mod = dat_complete |> filter(!(Idnumber %in% ids_remove)) |>
          age.cent = (HGagC/12) - mean((HGagC/12), na.rm = T)) #age in years and mean centred
 
 saveRDS(dat_mod, "G://users/eileen/Food_Ins/DATA/GUS_long.rds")
-
-#### For FI x Social analyses ####
-
-## Remove rows with missing age/SDQ/covariates 
-completeFS = c("HGagC", "Dsdem1", "Dsdco1", "Dsdhy1", "Dsdpr1", "Dsdto1", 
-                 "food_help", "DeEqv5", "DeSf12mn", "ALeSNim2", "WTbth2")
-indexFS = complete.cases(dat_long[,completeFS])
-dat_completeFS = dat_long[indexFS,]
-
-## Now remove individuals with less than 2 datapoints. (need at least 2 for linear model)
-ids_removeFS = dat_completeFS |> group_by(Idnumber) |> summarise(N = n()) |> 
-  filter(N < 2) |> pull(Idnumber)
-
-dat_FS = dat_completeFS |> filter(!(Idnumber %in% ids_removeFS)) |> 
-  mutate(Age = HGagC/12, #age in years
-         age.cent = (HGagC/12) - mean((HGagC/12), na.rm = T)) #age in years and mean centred
-
-saveRDS(dat_FS, "G://users/eileen/Food_Ins/DATA/GUS_long_FS.rds")

@@ -275,7 +275,7 @@ results.est = sdqmods |>
 openxlsx::write.xlsx(results.est, here("OUTPUT/GUS", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/GUS", "FI_FitStats.xlsx"))
 
-save(list = c("c.pred", "e.pred", "h.pred", "p.pred"), file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
+save(list = c("c.preds", "e.preds", "h.preds", "p.preds"), file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
 save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/GUS", "GUS_plotdat_adjusted.rda"))
 ```
 
