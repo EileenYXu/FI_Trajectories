@@ -79,9 +79,9 @@ gus_base = sw1 |> mutate(
                          2 ~ "Non-white")) |> 
   select(Idnumber, delivery_age, tenure, birthorder, smokepreg, MatEdu, 
          occupation, ethnicity)
+
 gus_base = gus_base |> mutate(across(where(is.character), as.factor))
 rm(sw1)
-
 
 # full sample (wide format)
 gus_wide = readRDS(here("DATA", "sw5_demog.rds")) |> select(-MatEdu)
