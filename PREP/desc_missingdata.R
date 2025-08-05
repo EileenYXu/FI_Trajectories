@@ -1,0 +1,116 @@
+#### Demographics of included and excluded ppts in ALSPAC and GUS ####
+
+library(here)
+i_am("PREP/desc_missingdata.R")
+source(here("FUNS", "packages.R"))
+source(here("FUNS", "prep.R"))
+
+# ALSPAC ----
+
+# full sample (wide format)
+alspac_wide = readRDS(here("DATA", "ALSPAC_Wide_Pre_Imputed.rds"))
+nrow(alspac_wide) #15645 participants
+
+# included sample (long format)
+alspac_inc = readRDS(here("DATA","ALSPAC_long.rds"))
+
+# get unique IDs for included participants and make column of included/excluded
+included = unique(alspac_inc$ID)
+length(included) #8078 participants included
+rm(alspac_inc)
+
+alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> as.factor()
+summary(alspac_wide$included) #7567 excluded
+
+# filter demographic vars and code as factors
+sumvars = c("sex", "income", "foodDiff", "IMD", "matAge", "matEd",
+            "matClass", "parity", "housing", "finDiff", "smokePreg", "epdsPre",
+            "epdsPost", "ethnicity", "epds", "foodDiff3")
+
+alspac_wide = alspac_wide |> select(included, any_of(sumvars)) |> 
+  mutate(foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
+                               foodDiff == "Slightly" ~ "Slightly",
+                               foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
+           fct_relevel("Not difficult"))
+
+indat = alspac_wide |> filter(included=="1")
+alspac_in = get_sum_stats(dat = indat, vars = sumvars)
+
+exdat = alspac_wide |> filter(included=="0")
+alspac_ex = get_sum_stats(dat = exdat, vars = sumvars)
+
+
+# GUS ----
+
+# first need to read in some sweep 1 data to compare weighting demographic vars used in ALSPAC
+vars = c("Idnumber", "DaHGmag5", "DaZten02", "DaHGbord", "MaHcig01",
+         "DaMedu03", "DaMsec01", "DaEthGpC")
+
+sw1 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw1_b_v4_protect.tab") |> select(all_of(vars))
+
+# recode to meaningful names
+gus_base = sw1 |> mutate(
+  delivery_age = case_when(
+    DaHGmag5==1 ~ "<20",
+    DaHGmag5==2 ~ "20-29",
+    DaHGmag5==3 ~ "30-39",
+    DaHGmag5==4 ~ "40+",
+    .default = NA),
+  tenure = case_when(
+    DaZten02==1 ~ "Owner occupied",
+    DaZten02==2 ~ "Social rented",
+    DaZten02==3 ~ "Private rented",
+    .default = NA),
+  birthorder = case_match(DaHGbord,
+                          1 ~ "1st born",
+                          2 ~ "2nd born",
+                          c(3:8) ~ "3+ born"),
+  smokepreg = case_match(MaHcig01, c(1,2) ~ "1", 3 ~ "0", .default = NA),
+  MatEdu = case_match(DaMedu03,
+                      c(1,2) ~ "<GCSE",
+                      3 ~ "GCSEs",
+                      c(4:6) ~ ">=A level"),
+  occupation = case_match(DaMsec01,
+                      1 ~ "Professional/Managerial",
+                      c(2:6) ~ "Intermediate - Unemployed"),
+  ethnicity = case_match(DaEthGpC,
+                         1 ~ "White",
+                         2 ~ "Non-white")) |> 
+  select(Idnumber, delivery_age, tenure, birthorder, smokepreg, MatEdu, 
+         occupation, ethnicity)
+rm(sw1)
+
+# full sample (wide format)
+gus_wide = readRDS(here("DATA", "sw5_demog.rds")) |> select(-MatEdu)
+nrow(gus_wide) #3833 participants
+
+# merge in baseline details
+gus_wide = merge(gus_wide, gus_base, by = "Idnumber", all.x = T, all.y = F)
+
+# included sample (long format)
+gus_inc = readRDS(here("DATA","GUS_long.rds"))
+
+# get unique IDs for included participants and make column of included/excluded
+included = unique(gus_inc$Idnumber)
+length(included) #3167 participants included
+
+gus_wide$included = ifelse(gus_wide$Idnumber %in% included, 1, 0) |> as.factor()
+summary(gus_wide$included) #666 excluded
+
+# filter demographic vars and code as factors
+sumvars = c("MeFaff04", "ALeSNim2", "Sex", "MeFaff3lvl", "EqvIncome",
+            "DeSf12mn", "delivery_age", "tenure", "birthorder", "smokepreg",
+            "MatEdu", "occupation", "ethnicity")
+
+gus_wide = gus_wide |> select(included, any_of(sumvars))
+
+indat = gus_wide |> filter(included=="1")
+gus_in = get_sum_stats(dat = indat, vars = sumvars)
+
+exdat = gus_wide |> filter(included=="0")
+gus_ex = get_sum_stats(dat = exdat, vars = sumvars)
+
+descs = list("ALSPAC_included" = alspac_in, "ALSPAC_excluded" = alspac_ex,
+             "GUS_included" = gus_in, "GUS_excluded" = gus_ex)
+
+openxlsx::write.xlsx(descs, here("OUTPUT/", "Descriptives.xlsx"))

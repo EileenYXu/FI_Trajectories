@@ -227,7 +227,7 @@ plot.adjusted[["hyper"]]
 ```{r}
 peerfits = covars |> 
   map(\(x) fit_lmer(dat = dat, outcome ="peer", age = "age.cent",
-                  id = "ID", wt = dat$ipw, modType = "quartic",
+                  id = "ID", wt = dat$ipw, modType = "cubic",
                   grp = "foodDiff3", covs = x))
 ```
 
@@ -297,7 +297,7 @@ results.est = sdqmods |>
 openxlsx::write.xlsx(results.est, here("OUTPUT/ALSPAC", "FI_Estimates.xlsx"))
 openxlsx::write.xlsx(results.fitstats, here("OUTPUT/ALSPAC", "FI_FitStats.xlsx"))
 
-save(list = c("c.pred", "e.pred", "h.pred", "p.pred"), file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
+save(list = c("c.preds", "e.preds", "h.preds", "p.preds"), file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat.rda"))
 save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
 ```
 
