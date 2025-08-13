@@ -31,11 +31,11 @@ alspac_wide = rename_with(.data = alspac_wide, .cols = all_of(agecols),
 # filter demographic vars and code as factors
 sumvars = c("sex", "income", "foodDiff", "IMD", "matAge", "matEd",
             "matClass", "parity", "housing", "finDiff", "smokePreg", "epdsPre",
-            "epdsPost", "ethnicity", "epds", "foodDiff3")
+            "epdsPost", "ethnicity", "epds", "foodDiff3", 
+            grepv(pattern = "_age", x = names(alspac_wide)))
 
 alspac_wide = alspac_wide |> 
-  select(included, 
-         any_of(c(sumvars, grepv(pattern = "_age", x = names(alspac_wide))))) |> 
+  select(included, any_of(sumvars)) |> 
   mutate(foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
                                foodDiff == "Slightly" ~ "Slightly",
                                foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
@@ -116,10 +116,11 @@ gus_wide = gus_wide |> mutate(across(.cols = ends_with("HGagc"), ~ .x/12)) |>
 # filter demographic vars and code as factors
 sumvars = c("MeFaff04", "ALeSNim2", "Sex", "MeFaff3lvl", "EqvIncome",
             "DeSf12mn", "delivery_age", "tenure", "birthorder", "smokepreg",
-            "MatEdu", "occupation", "ethnicity")
+            "MatEdu", "occupation", "ethnicity",
+            grepv("D[[:alpha:]]\\_age", names(gus_wide)))
 
 gus_wide = gus_wide |> 
-  select(included, any_of(c(sumvars, grepv("D[[:alpha:]]\\_age", names(gus_wide)))))
+  select(included, any_of(sumvars))
 
 indat = gus_wide |> filter(included=="1")
 gus_in = get_sum_stats(dat = indat, vars = sumvars)
