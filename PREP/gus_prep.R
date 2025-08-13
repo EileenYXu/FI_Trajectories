@@ -63,14 +63,8 @@ sw5 = sw5 %>% mutate(
   DeMedu03 = as.factor(DeMedu03),
   DeYedu03 = as.factor(DeYedu03),
   DeEqv5 = as.factor(DeEqv5) %>% relevel(ref = 5), #reference level is highest income
-  ALeSNim2 = factor(ALeSNim2) %>% relevel(ref = 5) #ref is highest SIMD, 1 is lowest i.e. most deprived
+  ALeSNim2 = factor(ALeSNim2) %>% relevel(ref = 1) #ref is highest SIMD, 1 is lowest i.e. least deprived
 )
-
-# save this demographics file for easy access
-saveRDS(sw5, "G://users/eileen/Food_Ins/DATA/sw5_demog.rds")
-
-# for analysis, remove columns with descriptive factor levels
-sw5 = sw5 %>% select(-c(MatEdu, PtnrEdu, EqvIncome, MatEmploy, MatEthnicity))
 
 # how many individuals are missing FI or covariates?
 
@@ -129,6 +123,12 @@ dat_wide = dat_wide %>% mutate(
     .default = paste(MeFaff3lvl, help_bin, sep = ".")
   ) %>% fct_relevel("Not at all.Enough")
 )
+
+# Save wide dataset 
+saveRDS(dat_wide, "G://users/eileen/Food_Ins/DATA/GUS_wide.rds")
+
+# for analysis, remove columns with descriptive factor levels
+dat_wide = dat_wide %>% select(-c(MatEdu, PtnrEdu, EqvIncome, MatEmploy, MatEthnicity))
 
 #### Wide to long ####
 sdq = c("HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|Dsdps1|Dsdto1|WTbth2")
