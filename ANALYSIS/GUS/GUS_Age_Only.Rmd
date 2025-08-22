@@ -75,9 +75,9 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = get_preds(dat = dat, obj = conduct_fits$cubic, specs = "age.cent", age_y = "Age")
+c.dat = get_preds(dat = dat, obj = conduct_fits$cubic, specs = "age.cent", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Conduct")
+emmeans.plot = traj_plot(c.dat) + xlab("Age") + ylab("SDQ Conduct")
 emmeans.plot
 ```
 
@@ -99,9 +99,9 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Cubic)
 
 ```{r}
-plotdat = get_preds(dat = dat, obj = emot_fits$cubic, specs = "age.cent", age_y = "Age")
+e.dat = get_preds(dat = dat, obj = emot_fits$cubic, specs = "age.cent", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Emotional")
+emmeans.plot = traj_plot(e.dat) + xlab("Age") + ylab("SDQ Emotional")
 emmeans.plot
 ```
 
@@ -125,9 +125,9 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Linear)
 
 ```{r}
-plotdat = get_preds(dat = dat, obj = hyper_fits$linear, specs = "age.cent", age_y = "Age")
+h.dat = get_preds(dat = dat, obj = hyper_fits$linear, specs = "age.cent", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Hyperactivity")
+emmeans.plot = traj_plot(h.dat) + xlab("Age") + ylab("SDQ Hyperactivity")
 emmeans.plot
 ```
 
@@ -150,10 +150,14 @@ do.call(anova, unname(fits)) |>  as.data.frame() |>
 ### Plot model (Quartic)
 
 ```{r}
-plotdat = get_preds(dat = dat, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
+p.dat = get_preds(dat = dat, obj = peer_fits$quartic, specs = "age.cent", age_y = "Age")
 
-emmeans.plot = traj_plot(plotdat) + xlab("Age") + ylab("SDQ Peer")
+emmeans.plot = traj_plot(p.dat) + xlab("Age") + ylab("SDQ Peer")
 emmeans.plot
+```
+
+```{r}
+save(list = c("c.dat", "e.dat", "h.dat", "p.dat"), file = here("OUTPUT/GUS", "GUS_ageonly_plotdat.rda"))
 ```
 
 

@@ -7,39 +7,32 @@ i_am("ANALYSIS/makeFigs.R")
 source(here("FUNS", "packages.R"))
 source(here("FUNS", "plot.R"))
 
-# Unadjusted trajectories (for ESCAP poster) ----
+# FI Legend ----
+leg.df = data.frame(
+  x = rnorm(9),
+  y = rnorm(9),
+  FI = rep(c("No FI", "Low FI", "High FI"), times = 3)
+) |> mutate(low = y-1, hi = y+1)
 
-## ALSPAC ----
+leg = ggplot(leg.df) +
+  geom_line(aes(x, y, colour = FI), linewidth = 1.5) +
+  geom_ribbon(aes(x = x, y = y, ymin = low, ymax = hi, fill = FI), 
+              alpha = 0.2) +
+  scale_discrete_manual(aesthetics = c("colour", "fill"), 
+                        values = c("High FI" = "#56B4E9", "Low FI" = "#009E73",
+                                   "No FI" = "#E69F00")) +
+  theme_minimal() + theme(legend.background = element_blank(),
+                          legend.key = element_rect(colour = "transparent"), 
+                          legend.text = element_text(size = 12), 
+                          legend.key.spacing.y = unit(10, units = "pt"), 
+                          legend.title = element_blank())
 
-load(file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat.rda"))
+leg
 
-c = traj_plot(c.preds, "foodDiff3") + labs(title = "Conduct Problems", y = "SDQ score", x = "Age (years)") #+ theme(legend.position = "bottom", legend.direction = "horizontal", legend.title = element_blank())
+legend = ggpubr::get_legend(leg)
+as_ggplot(legend)
 
-e = traj_plot(e.preds, "foodDiff3") + labs(title="Emotional Symptoms", y = "SDQ score", x = "Age (years)")
-
-h = traj_plot(h.preds, "foodDiff3") + labs(title = "Hyperactivity/Inattention", y = "SDQ score", x = "Age (years)")
-
-p = traj_plot(p.preds, "foodDiff3") + labs(title = "Peer Problems", y = "SDQ score", x = "Age (years)")
-
-fig1 = wrap_plots(list(c,e,h,p), guides = "collect", axes = "collect") & theme(text = element_text(size = 18), legend.position = "none")
-
-ggsave(fig1, filename = here("OUTPUT/ALSPAC", "ALSPAC_Fig.svg"), height = 8, width = 8.5, units = "in")
-
-## GUS ----
-
-load(file = here("OUTPUT/GUS", "GUS_plots.rda"))
-
-c = traj_plot(c.preds, "MeFaff3lvl") + labs(title = "Conduct Problems", y = "SDQ score", x = "Age (years)") 
-e = traj_plot(e.preds, "MeFaff3lvl") + labs(title="Emotional Symptoms", y = "SDQ score", x = "Age (years)") 
-h = traj_plot(h.preds, "MeFaff3lvl") + labs(title = "Hyperactivity/Inattention", y = "SDQ score", x = "Age (years)") 
-p = traj_plot(p.preds, "MeFaff3lvl") + labs(title = "Peer Problems", y = "SDQ score", x = "Age (years)") 
-
-fig2 = wrap_plots(list(c,e,h,p), guides = "collect", axes = "collect") & theme(text = element_text(size = 18), legend.position = "none")
-
-ggsave(fig2, filename = here("OUTPUT/GUS", "GUS_Fig.svg"), height = 8, width = 8.5, units = "in")
-
-
-# Fully-adjusted trajectories figure ----
+# Figure 1: Fully-adjusted trajectories ----
 
 # load data
 load(file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
@@ -49,7 +42,7 @@ load(file = here("OUTPUT/GUS", "GUS_plotdat_adjusted.rda"))
 gus = list(conduct = c.adj, emot = e.adj, hyper = h.adj, peer = p.adj)
 rm(c.adj, e.adj, h.adj, p.adj)
 
-# make individual plots
+## Individual plots ----
 alspac.plots = alspac |> 
   map(\(x) traj_plot(x, colour = "foodDiff3") + xlab("Age (years)"))
 names(alspac.plots) = names(alspac.plots) |> 
@@ -77,33 +70,10 @@ plotlist[c(3,7)] = plotlist[c(3,7)] |>
 plotlist[c(4,8)] = plotlist[c(4,8)] |> 
   map(\(x) x + scale_y_continuous(limits = c(0.7, 2.6), breaks = c(0.5, 1, 1.5, 2, 2.5)))
 
-# assemble into 2 rows, 4 columns
+## Assemble into 2 rows, 4 columns ----
 ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, guides = "collect", axes = "collect") + plot_annotation(tag_levels = "A") & theme(legend.position = "none", plot.margin = margin(10,10,10,10,"pt")) & ylab(NULL) 
 
 ptch
-
-# manually make legend from dummy data
-leg.df = data.frame(
-  x = rnorm(9),
-  y = rnorm(9),
-  FI = rep(c("No FI", "Low FI", "Moderate FI"), times = 3)
-) |> mutate(low = y-1, hi = y+1)
-
-leg = ggplot(leg.df) +
-  geom_line(aes(x, y, colour = FI), linewidth = 1.5) +
-  geom_ribbon(aes(x = x, y = y, ymin = low, ymax = hi, fill = FI), alpha = 0.2) +
-  scale_discrete_manual(aesthetics = c("colour", "fill"), 
-                        values = c("Moderate FI" = "#56B4E9", "Low FI" = "#009E73", "No FI" = "#E69F00")) +
-  theme_minimal() + theme(legend.background = element_blank(),
-        legend.key = element_rect(colour = "transparent"), 
-        legend.text = element_text(size = 12), 
-        legend.key.spacing.y = unit(10, units = "pt"), 
-        legend.title = element_blank())
-
-leg
-
-legend = ggpubr::get_legend(leg)
-as_ggplot(legend)
 
 ## No labels ----
 
@@ -156,3 +126,81 @@ fig
 
 ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.svg"), height = 6, width = 12, units = "in")
 ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.png"), height = 6, width = 12, units = "in")
+
+
+# Supplementary figures ----
+
+## GUS age only ----
+
+load(file = here("OUTPUT/GUS", "GUS_ageonly_plotdat.rda"))
+gus = list("Conduct Problems" = c.dat, "Emotional Symptoms" = e.dat, "Hyperactivity/Inattention" = h.dat, "Peer Problems" = p.dat)
+rm(c.dat, e.dat, h.dat, p.dat)
+
+gus.age = gus |> 
+  imap(\(x, idx) traj_plot(x) + xlab("Age (years)") + ylab(idx) + scale_x_continuous(breaks = c(4,6,8,10,12,14,16)))
+gus.age
+
+gus.plot = wrap_plots(gus.age, axes = "collect") + plot_annotation(tag_levels = "A")
+gus.plot
+ggsave(plot = gus.plot, filename = here("OUTPUT", "GUS_AgeOnly.png"), height = 5, width = 6, units = "in")
+
+## ALSPAC age only ----
+
+load(file = here("OUTPUT/ALSPAC", "ALSPAC_ageonly_plotdat.rda"))
+alspac = list("Conduct Problems" = c.dat, "Emotional Symptoms" = e.dat, "Hyperactivity/Inattention" = h.dat, "Peer Problems" = p.dat)
+rm(c.dat, e.dat, h.dat, p.dat)
+
+alspac.age = alspac |> 
+  imap(\(x, idx) traj_plot(x) + xlab("Age (years)") + ylab(idx) + scale_x_continuous(breaks = c(6,8,10,12,14,16,18)))
+alspac.age
+
+alspac.plot = wrap_plots(alspac.age, axes = "collect") + plot_annotation(tag_levels = "A")
+ggsave(plot = alspac.plot, filename = here("OUTPUT", "ALSPAC_AgeOnly.png"), height = 5, width = 6, units = "in")
+
+## GUS unadjusted ----
+
+load(file = here("OUTPUT/GUS", "GUS_plotdat.rda"))
+gus = list("Conduct Problems" = c.preds, "Emotional Symptoms" = e.preds, "Hyperactivity/Inattention" = h.preds, "Peer Problems" = p.preds)
+rm(c.preds, e.preds, h.preds, p.preds)
+
+# individual plots
+gus.age = gus |> 
+  imap(\(x, idx) traj_plot(x,"MeFaff3lvl") + labs(y = idx, x = "Age (years)") + scale_x_continuous(breaks = c(4,6,8,10,12,14,16)))
+gus.age
+
+gus.plot = wrap_plots(gus.age, axes = "collect") + plot_annotation(tag_levels = "A") & theme(legend.position = "none")
+
+# add legend
+layout = "
+AAAA#
+AAAAB
+AAAA#"
+
+gus.unadj = wrap_elements(gus.plot) + legend + plot_layout(design = layout) & theme(plot.margin = margin(0,0,0,0,"pt"), text = element_text(size = 12))
+gus.unadj
+
+ggsave(plot = gus.unadj, filename = here("OUTPUT", "GUS_Unadjusted.png"), height = 5, width = 7.5, units = "in")
+
+## ALSPAC unadjusted ----
+
+load(file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat.rda"))
+alspac = list("Conduct Problems" = c.preds, "Emotional Symptoms" = e.preds, "Hyperactivity/Inattention" = h.preds, "Peer Problems" = p.preds)
+rm(c.preds, e.preds, h.preds, p.preds)
+
+# individual plots
+alspac.age = alspac |> 
+  imap(\(x, idx) traj_plot(x,"foodDiff3") + labs(y = idx, x = "Age (years)") + scale_x_continuous(breaks = c(6,8,10,12,14,16,18)))
+alspac.age
+
+alspac.plot = wrap_plots(alspac.age, axes = "collect") + plot_annotation(tag_levels = "A") & theme(legend.position = "none")
+
+# add legend
+layout = "
+AAAA#
+AAAAB
+AAAA#"
+
+alspac.unadj = wrap_elements(alspac.plot) + legend + plot_layout(design = layout) & theme(plot.margin = margin(0,0,0,0,"pt"), text = element_text(size = 12))
+alspac.unadj
+
+ggsave(plot = alspac.unadj, filename = here("OUTPUT", "ALSPAC_Unadjusted.png"), height = 5, width = 7.5, units = "in")

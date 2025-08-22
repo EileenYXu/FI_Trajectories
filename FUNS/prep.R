@@ -1,4 +1,4 @@
-#### Make a data dictionary of variable names, label (description) and labels (levels) ####
+# Make data dictionary of variable names, label (description) and labels (levels) ----
 
 get_data_dict <- function(df) {
   DataDict = data.frame(
@@ -13,7 +13,7 @@ get_data_dict <- function(df) {
 } 
 
 
-### Make a column flagging how many missing columns a ppt has
+# Column flagging how many missing columns a ppt has ----
 # df = data frame
 # cols = list of columns you want to count missings in with corresponding output colname
 n_occ_missed <- function(df, cols) {
@@ -29,7 +29,7 @@ n_occ_missed <- function(df, cols) {
 }
 
 
-### function making a column with 1 if not missing and 0 if missing
+# Column with 1 if not missing and 0 if missing ----
 # df = dataframe 
 # var_cols = vector of columns to check missings in
 # new_names = vector of names for the new columns, corresponding to length of var_cols
@@ -43,7 +43,7 @@ make_misscols <- function(df, var_cols, new_names) {
 }
 
 
-### function to make weights from multiply imputed dataset ----
+# Make weights from multiply imputed dataset ----
 # outcome = vector of attendance at each sweep to make weights for
 # preds = vector of predictors to use 
 # idcol = column with ppt IDs

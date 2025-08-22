@@ -14,7 +14,7 @@ nrow(alspac_wide) #15645 participants
 # included sample (long format)
 alspac_inc = readRDS(here("DATA","ALSPAC_long.rds"))
 
-# get unique IDs for included participants and make column of included/excluded
+## Included/excluded ----
 included = unique(alspac_inc$ID)
 length(included) #8078 participants included
 rm(alspac_inc)
@@ -22,17 +22,25 @@ rm(alspac_inc)
 alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> as.factor()
 summary(alspac_wide$included) #7567 excluded
 
-# rename age columns to be timepoint_age and convert to years
-agecols = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a")
+## Attendance at each sweep ----
+agecols = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a") #proxy for attendance
+new_names = paste0("in_", str_extract(agecols, pattern = "^[:alpha:]{2}")) 
+
+attend = alspac_wide |> select(ID, all_of(agecols))
+attend = make_misscols(df=attend, var_cols = agecols, new_names = new_names) |> select(ID, all_of(new_names))
+alspac_wide = merge(alspac_wide, attend, by = "ID")
+
+## Rename age columns to be timepoint_age and convert to years ----
 alspac_wide = rename_with(.data = alspac_wide, .cols = all_of(agecols), 
                           ~gsub(pattern = "\\d{3,}a", replacement = "_age", .x)) |> 
   mutate(across(.cols = ends_with("_age"), ~ .x/12))
 
-# filter demographic vars and code as factors
+## Filter demographic vars and code as factors ----
 sumvars = c("sex", "income", "foodDiff", "IMD", "matAge", "matEd",
             "matClass", "parity", "housing", "finDiff", "smokePreg", "epdsPre",
             "epdsPost", "ethnicity", "epds", "foodDiff3", 
-            grepv(pattern = "_age", x = names(alspac_wide)))
+            grepv(pattern = "_age", x = names(alspac_wide)),
+            grepv(pattern = "in_", x = names(alspac_wide)))
 
 alspac_wide = alspac_wide |> 
   select(included, any_of(sumvars)) |> 
@@ -40,6 +48,8 @@ alspac_wide = alspac_wide |>
                                foodDiff == "Slightly" ~ "Slightly",
                                foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
            fct_relevel("Not difficult"))
+
+## Get demogs ----
 
 indat = alspac_wide |> filter(included=="1")
 alspac_in = get_sum_stats(dat = indat, vars = sumvars)
@@ -51,7 +61,7 @@ rm(indat, exdat, alspac_wide)
 
 # GUS ----
 
-# first need to read in some sweep 1 data to compare weighting demographic vars used in ALSPAC
+## Sweep 1 data to compare weighting demographic vars used in ALSPAC ----
 vars = c("Idnumber", "DaHGmag5", "DaZten02", "DaHGbord", "MaHcig01",
          "DaMedu03", "DaMsec01", "DaEthGpC")
 
@@ -108,20 +118,30 @@ length(included) #3167 participants included
 gus_wide$included = ifelse(gus_wide$Idnumber %in% included, 1, 0) |> as.factor()
 summary(gus_wide$included) #666 excluded
 
-# rename age columns and convert into years
+## Attendance at each sweep ----
+var_cols = grepv(pattern = "HGagC", names(gus_wide))
+new_names = paste0("in_", str_extract(var_cols, pattern = "^[:alpha:]{2}")) 
+
+attend = gus_wide |> select(Idnumber, all_of(var_cols))
+attend = make_misscols(df=attend, var_cols = var_cols, new_names = new_names) |> select(Idnumber, all_of(new_names))
+gus_wide = merge(gus_wide, attend, by = "Idnumber")
+
+## Rename age columns and convert into years ----
 gus_wide = gus_wide |> mutate(across(.cols = ends_with("HGagc"), ~ .x/12)) |> 
   rename_with(.cols = ends_with("HGagC"), 
                           ~gsub(pattern = "HGagC", replacement = "_age", .x))
 
-# filter demographic vars and code as factors
+## filter demographic vars and code as factors ----
 sumvars = c("MeFaff04", "ALeSNim2", "Sex", "MeFaff3lvl", "EqvIncome",
             "DeSf12mn", "delivery_age", "tenure", "birthorder", "smokepreg",
             "MatEdu", "occupation", "ethnicity",
-            grepv("D[[:alpha:]]\\_age", names(gus_wide)))
+            grepv("D[[:alpha:]]\\_age", names(gus_wide)),
+            grepv("in_", names(gus_wide)))
 
 gus_wide = gus_wide |> 
   select(included, any_of(sumvars))
 
+## get demogs ----
 indat = gus_wide |> filter(included=="1")
 gus_in = get_sum_stats(dat = indat, vars = sumvars)
 
