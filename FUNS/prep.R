@@ -37,7 +37,7 @@ make_misscols <- function(df, var_cols, new_names) {
   newdf = df
   for (i in seq_along(var_cols)) {
     var = df %>% pull(var_cols[i])
-    newdf[[new_names[i]]] = ifelse(is.na(var), 0, 1)
+    newdf[[new_names[i]]] = ifelse(is.na(var), 0, 1) |> as.factor()
   }
   return(newdf)
 }

@@ -63,8 +63,12 @@ conduct_fits = modTypes |>
 
 fits = conduct_fits |> list_transpose(template = "fit")  |>  unlist()
 
-do.call(anova, unname(fits)) |>  as.data.frame() |>  
-  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+deviance = get_fitstats(fitlist = conduct_fits, modguide = modTypes) |> pull(deviance)
+
+conduct = do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> cbind(deviance)
+
+conduct |> kbl()  |>  kable_styling(full_width = F)
 ```
 
 ### Plot model (Cubic)
@@ -88,8 +92,12 @@ emot_fits = modTypes |>
 
 fits = emot_fits |> list_transpose(template = "fit")  |>  unlist()
 
-do.call(anova, unname(fits)) |>  as.data.frame() |>  
-  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+deviance = get_fitstats(fitlist = emot_fits, modguide = modTypes) |> pull(deviance)
+
+emot = do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> cbind(deviance)
+
+emot |> kbl()  |>  kable_styling(full_width = F)
 ```
 
 ### Plot model (Cubic)
@@ -114,8 +122,12 @@ hyper_fits = modTypes |>
 
 fits = hyper_fits |> list_transpose(template = "fit")  |>  unlist()
 
-do.call(anova, unname(fits)) |>  as.data.frame() |>  
-  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+deviance = get_fitstats(fitlist = hyper_fits, modguide = modTypes) |> pull(deviance)
+
+hyper = do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> cbind(deviance)
+
+hyper |> kbl()  |>  kable_styling(full_width = F)
 ```
 
 
@@ -141,8 +153,12 @@ peer_fits = modTypes |>
 
 fits = peer_fits |> list_transpose(template = "fit")  |>  unlist()
 
-do.call(anova, unname(fits)) |>  as.data.frame() |>  
-  `rownames<-`(modTypes) |> kbl()  |>  kable_styling(full_width = F)
+deviance = get_fitstats(fitlist = peer_fits, modguide = modTypes) |> pull(deviance)
+
+peer = do.call(anova, unname(fits)) |>  as.data.frame() |>  
+  `rownames<-`(modTypes) |> cbind(deviance)
+
+peer |> kbl()  |>  kable_styling(full_width = F)
 ```
 
 ### Plot model (Cubic)
@@ -157,6 +173,8 @@ peer.plot
 
 ```{r}
 save(list = c("c.dat", "e.dat", "h.dat", "p.dat"), file = here("OUTPUT/ALSPAC", "ALSPAC_ageonly_plotdat.rda"))
+modcomps = list("conduct" = conduct, "emot" = emot, "hyper" = hyper, "peer" = peer)
+openxlsx::write.xlsx(modcomps, file = here("OUTPUT/ALSPAC", "Age_Only_ModComps.xlsx"), row.names = TRUE)
 ```
 
 

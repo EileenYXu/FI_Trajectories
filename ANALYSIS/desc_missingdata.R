@@ -52,10 +52,12 @@ alspac_wide = alspac_wide |>
 ## Get demogs ----
 
 indat = alspac_wide |> filter(included=="1")
-alspac_in = get_sum_stats(dat = indat, vars = sumvars)
+alspac_in = get_sum_stats(dat = indat, vars = sumvars) |> 
+  filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
 
 exdat = alspac_wide |> filter(included=="0")
-alspac_ex = get_sum_stats(dat = exdat, vars = sumvars)
+alspac_ex = get_sum_stats(dat = exdat, vars = sumvars) |> 
+  filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
 
 rm(indat, exdat, alspac_wide)
 
@@ -131,7 +133,7 @@ gus_wide = gus_wide |> mutate(across(.cols = ends_with("HGagc"), ~ .x/12)) |>
   rename_with(.cols = ends_with("HGagC"), 
                           ~gsub(pattern = "HGagC", replacement = "_age", .x))
 
-## filter demographic vars and code as factors ----
+## Filter demographic vars and code as factors ----
 sumvars = c("MeFaff04", "ALeSNim2", "Sex", "MeFaff3lvl", "EqvIncome",
             "DeSf12mn", "delivery_age", "tenure", "birthorder", "smokepreg",
             "MatEdu", "occupation", "ethnicity",
@@ -141,12 +143,14 @@ sumvars = c("MeFaff04", "ALeSNim2", "Sex", "MeFaff3lvl", "EqvIncome",
 gus_wide = gus_wide |> 
   select(included, any_of(sumvars))
 
-## get demogs ----
+## Get demogs ----
 indat = gus_wide |> filter(included=="1")
-gus_in = get_sum_stats(dat = indat, vars = sumvars)
+gus_in = get_sum_stats(dat = indat, vars = sumvars) |> 
+  filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
 
 exdat = gus_wide |> filter(included=="0")
-gus_ex = get_sum_stats(dat = exdat, vars = sumvars)
+gus_ex = get_sum_stats(dat = exdat, vars = sumvars) |> 
+  filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
 
 descs = list("ALSPAC_included" = alspac_in, "ALSPAC_excluded" = alspac_ex,
              "GUS_included" = gus_in, "GUS_excluded" = gus_ex)
