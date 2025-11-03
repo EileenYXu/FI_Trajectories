@@ -65,13 +65,16 @@ gus.scores = gus.path |>
   map(read_excel, path = gus.path)
 
 # we want to keep the estimate (mean difference) and CI
+# paste these into the format est [lower - upper]
 alspac.scores = alspac.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 2))
 gus.scores = gus.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 2))
 
-# select columns to keep and pivot to wide format
+
+# select columns to keep, round adjusted p to 3 d.p. for precision, and pivot to wide format
 contrtab <- function(dat) {
   df = dat |> select(Age, contrast, comb, adj.p.value) |> 
-  rename(diff = comb, p.adj = adj.p.value)
+    mutate(adj.p.value = round(adj.p.value, digits = 3)) |> 
+    rename(diff = comb, p.adj = adj.p.value)
 
   out = pivot_wider(df, names_from = Age, values_from = c(diff, p.adj), 
             names_vary = "slowest")

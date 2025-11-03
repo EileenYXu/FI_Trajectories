@@ -128,8 +128,11 @@ get_sum_stats <- function(dat, vars, digits = NULL) {
 
 addci <- function(dat, est, lower, upper, digits = NULL) {
   d = ifelse(is.null(digits), 2, digits)
-  # first round.
-  df = dat |> mutate(across(where(is.numeric), \(x) round(x, digits = d)))
+  
+  # only round estimate, lower and upper ci columns
+  df = dat |> 
+    mutate(across(all_of(c(est, lower, upper)), \(x) round(x, digits = d)))
+  
   # now paste into a new column
   df = df |> mutate(
     comb = paste0(!!sym(est), " [", !!sym(lower), " - ", !!sym(upper), "]")
