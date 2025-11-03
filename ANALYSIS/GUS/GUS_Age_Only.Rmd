@@ -45,8 +45,9 @@ dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, peer = Dsdpr1
 
 sumtable = dat %>% group_by(across(sweep)) %>%
           summarise(N = n(),
-                    age = m_sd(Age),
-                    ageRange = range_tab(Age),
+                    Age_M = m_sd(Age),
+                    Age_Myrs = age_ym(mean(Age, na.rm = T)),
+                    AgeRange = range_tab(Age, age = TRUE),
                     Conduct = m_sd(conduct),
                     Emot = m_sd(emot),
                     Hyper = m_sd(hyper),

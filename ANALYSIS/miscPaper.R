@@ -17,7 +17,7 @@ gus.scores = gus.path |>
   set_names() |> 
   map(read_excel, path = gus.path)
 
-# round everything to 3 d.p. and append CI in the format:
+# round everything to 2 d.p. and append CI in the format:
 # estimate [lower - upper]
 alspac.tidy = alspac.scores |> 
   map(\(x) mutate(.data = x, 

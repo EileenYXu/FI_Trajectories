@@ -36,6 +36,17 @@ theme_set(my_theme()) # use new theme
 
 # Generic useful functions ----
 
+# age_ym ----
+
+# function turning age in years with decimal places into years and months
+
+age_ym <- function(age){
+  yrs = floor(age)
+  mths = round((age - yrs)*12, digits = 0)
+  out = paste0(yrs, "y ", mths, "m")
+  return(out)
+}
+
 # m_sd() ----
 
 # super simple function, just pastes into M (SD) format and rounds (2 d.p. by default). Specify digits to change this.
@@ -51,10 +62,18 @@ m_sd <- function(var, digits = NULL){
 # range_tab() ----
 
 # generic function to calculate range, round (2 d.p. by default). and output in the format Min - Max
+# if age = TRUE, display in months and years
 
-range_tab <- function(var, digits = NULL){
+range_tab <- function(var, digits = NULL, age = NULL){
   d = ifelse(is.null(digits), 2, digits)
-  r = range(var, na.rm = T) |> round(digits = d)
+  r = range(var, na.rm = T) 
+  
+  if (is.null(age)) {
+    r = r |> round(digits = d)
+  } else {
+    r = age_ym(r)
+  }
+
   val = paste(r, collapse = " - ")
   return(val)
 }
