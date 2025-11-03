@@ -65,9 +65,8 @@ gus.scores = gus.path |>
   map(read_excel, path = gus.path)
 
 # we want to keep the estimate (mean difference) and CI
-# rounding to 3 d.p. to avoid zeros
-alspac.scores = alspac.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 3))
-gus.scores = gus.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 3))
+alspac.scores = alspac.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 2))
+gus.scores = gus.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 2))
 
 # select columns to keep and pivot to wide format
 contrtab <- function(dat) {
