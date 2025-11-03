@@ -41,6 +41,7 @@ dat = readRDS(here("DATA", "ALSPAC_long.rds"))
 sumtable = dat %>% group_by(across(sweep)) %>%
           summarise(N = n(),
                     age = m_sd(Age),
+                    ageRange = range_tab(Age),
                     Conduct = m_sd(conduct),
                     Emot = m_sd(emot),
                     Hyper = m_sd(hyper),

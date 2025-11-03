@@ -4,7 +4,7 @@ library(readxl)
 i_am("ANALYSIS/miscPaper.R")
 source(here("FUNS", "packages.R"))
 
-# scores at ages formatted for a table ----
+# scores at ages formatted for into a neat table for each cohort  ----
 alspac.path = here("OUTPUT/ALSPAC", "FI_Scores.xlsx")
 alspac.scores = alspac.path |> 
   excel_sheets() |> 
@@ -17,26 +17,35 @@ gus.scores = gus.path |>
   set_names() |> 
   map(read_excel, path = gus.path)
 
-# append SE for table
-alspac.tidy = alspac.scores |> map(\(x) mutate(.data = x, across(where(is.numeric), \(x) round(x, digits = 2)),
-                                               comb = paste0(estimate, " (", std.error, ")")))
+# round everything to 3 d.p. and append CI in the format:
+# estimate [lower - upper]
+alspac.tidy = alspac.scores |> 
+  map(\(x) mutate(.data = x, 
+                  across(where(is.numeric), \(x) round(x, digits = 2)),
+                  comb = paste0(estimate, " [", conf.low, " - ", conf.high, "]"),
+                  foodDiff3 = factor(foodDiff3, levels = c("Not difficult", "Slightly",
+                                                    "Fairly/Very"))))
 
-gus.tidy = gus.scores |> map(\(x, idx) mutate(.data = x, across(where(is.numeric), \(x) round(x, digits = 2)),
-                                              comb = paste0(estimate, " (", std.error, ")")))
+gus.tidy = gus.scores |> 
+  map(\(x, idx) mutate(.data = x, 
+                       across(where(is.numeric), \(x) round(x, digits = 2)),
+                       comb = paste0(estimate, " [", conf.low, " - ", conf.high, "]"),
+                       MeFaff3lvl = factor(MeFaff3lvl, levels = c("Not at all", "A little",
+                                                                "A lot/fair amount"))))
 
 alspac = alspac.tidy$conduct |> select(Age, foodDiff3) |> mutate(
   conduct = alspac.tidy$conduct$comb,
   emot = alspac.tidy$emot$comb,
   hyper = alspac.tidy$hyper$comb,
   peer = alspac.tidy$peer$comb
-)
+) |> arrange(Age, foodDiff3)
 
 gus = gus.tidy$conduct |> select(Age, MeFaff3lvl) |> mutate(
   conduct = gus.tidy$conduct$comb,
   emot = gus.tidy$emot$comb,
   hyper = gus.tidy$hyper$comb,
   peer = gus.tidy$peer$comb
-)
+) |> arrange(Age, MeFaff3lvl)
 
 res = list("alspac" = alspac, "gus" = gus)
 openxlsx::write.xlsx(res, here("OUTPUT/", "Scores.xlsx"))
@@ -56,8 +65,9 @@ gus.scores = gus.path |>
   map(read_excel, path = gus.path)
 
 # we want to keep the estimate (mean difference) and CI
-alspac.scores = alspac.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high"))
-gus.scores = gus.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high"))
+# rounding to 3 d.p. to avoid zeros
+alspac.scores = alspac.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 3))
+gus.scores = gus.scores |> map(\(x) addci(dat = x, est = "estimate", lower = "conf.low", upper = "conf.high", digits = 3))
 
 # select columns to keep and pivot to wide format
 contrtab <- function(dat) {

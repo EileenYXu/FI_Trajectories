@@ -54,6 +54,8 @@ plot.unadjusted = list()
 plot.adjusted = list()
 ```
 
+**Mean age: `r mean(dat$Age)` years**
+
 # Conduct problems {.tabset}
 
 ```{r}
@@ -79,7 +81,7 @@ plot.unadjusted[["conduct"]] = traj_plot(c.preds, colour = "foodDiff3") +
 plot.unadjusted[["conduct"]]
 ```
 
-## Covariates sex and income 
+## Covariates sex and income
 
 ```{r results='asis'}
 sjPlot::tab_model(conductfits[[2]]$fit)
@@ -119,7 +121,7 @@ emotfits = covars |>
                   grp = "foodDiff3", covs = x))
 ```
 
-## No covariates 
+## No covariates
 
 ```{r results='asis'}
 sjPlot::tab_model(emotfits[[1]]$fit)
@@ -175,7 +177,7 @@ hyperfits = covars |>
                   grp = "foodDiff3", covs = x))
 ```
 
-## No covariates 
+## No covariates
 
 ```{r results='asis'}
 sjPlot::tab_model(hyperfits[[1]]$fit)
@@ -231,7 +233,7 @@ peerfits = covars |>
                   grp = "foodDiff3", covs = x))
 ```
 
-## No covariates 
+## No covariates
 
 ```{r results='asis'}
 sjPlot::tab_model(peerfits[[1]]$fit)
@@ -305,7 +307,6 @@ save(list = c("c.adj", "e.adj", "h.adj", "p.adj"), file = here("OUTPUT/ALSPAC", 
 lapply(results.fitstats, function(x) kable(x, digits= 3))
 ```
 
-
 # Scores at ages and contrasts
 
 ```{r}
@@ -350,4 +351,3 @@ lapply(results.contr, function(x) kable(x, digits = 3))
 ```{r}
 lapply(results.scores, function(x) kable(x, digits = 3))
 ```
-

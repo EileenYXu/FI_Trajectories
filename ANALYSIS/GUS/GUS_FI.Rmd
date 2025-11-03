@@ -33,6 +33,8 @@ plot.unadjusted = list()
 plot.adjusted = list()
 ```
 
+**Mean age: `r mean(dat$Age)` years**
+
 # Conduct problems {.tabset}
 
 ```{r}

@@ -38,19 +38,35 @@ theme_set(my_theme()) # use new theme
 
 # m_sd() ----
 
-# super simple function, just pastes into M (SD) format to 2 dp
+# super simple function, just pastes into M (SD) format and rounds (2 d.p. by default). Specify digits to change this.
 
-m_sd <- function(var){
-  m = mean(var, na.rm = T) |> round(digits = 2)
-  sd = sd(var, na.rm = T) |> round(digits = 2)
+m_sd <- function(var, digits = NULL){
+  d = ifelse(is.null(digits), 2, digits)
+  m = mean(var, na.rm = T) |> round(digits = d)
+  sd = sd(var, na.rm = T) |> round(digits = d)
   val = paste0(m, " (", sd, ")")
+  return(val)
+}
+
+# range_tab() ----
+
+# generic function to calculate range, round (2 d.p. by default). and output in the format Min - Max
+
+range_tab <- function(var, digits = NULL){
+  d = ifelse(is.null(digits), 2, digits)
+  r = range(var, na.rm = T) |> round(digits = d)
+  val = paste(r, collapse = " - ")
+  return(val)
 }
 
 # get_sum_stats() ----
 
 # generic function to extract valid N for each variable and summary stat as mean (SD) or n (%) for factors
+# digits is 2 by default
 
-get_sum_stats <- function(dat, vars) {
+get_sum_stats <- function(dat, vars, digits = NULL) {
+  d = ifelse(is.null(digits), 2, digits)
+  
   summarydf <- data.frame()
   
   for (v in vars) {
@@ -74,7 +90,7 @@ get_sum_stats <- function(dat, vars) {
       for (lev in levs) {
         #format as count (%)
         descr <- paste0(as.numeric(tab_var[lev]),
-                        " (", round((tab_var[lev]/n_total)*100, digits = 2), 
+                        " (", round((tab_var[lev]/n_total)*100, digits = d), 
                         "%)")
         outrow <- data.frame("Var" = paste0(v, "_", lev), "n_total" = n_total,
                              "desc" = descr)
@@ -86,10 +102,15 @@ get_sum_stats <- function(dat, vars) {
   return(summarydf)
 }
 
+# addci() ----
+
 # function to paste CI with estimate in the format "estimate [lower - upper]"
-addci <- function(dat, est, lower, upper) {
-  # first round to 2 d.p.
-  df = dat |> mutate(across(where(is.numeric), \(x) round(x, digits = 2)))
+# rounds to 2 d.p. by default, change by specifying digits 
+
+addci <- function(dat, est, lower, upper, digits = NULL) {
+  d = ifelse(is.null(digits), 2, digits)
+  # first round.
+  df = dat |> mutate(across(where(is.numeric), \(x) round(x, digits = d)))
   # now paste into a new column
   df = df |> mutate(
     comb = paste0(!!sym(est), " [", !!sym(lower), " - ", !!sym(upper), "]")
