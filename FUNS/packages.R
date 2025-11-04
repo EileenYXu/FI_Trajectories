@@ -94,7 +94,7 @@ get_sum_stats <- function(dat, vars, digits = NULL) {
     
     if (is.numeric(variable)) {
       
-      #format as mean (sd)
+      # format as mean (sd)
       descr <- m_sd(variable)
       out <- data.frame("Var" = v, "n_total" = n_total, 
                         "desc" = descr)
@@ -107,7 +107,7 @@ get_sum_stats <- function(dat, vars, digits = NULL) {
       out <- data.frame()
       
       for (lev in levs) {
-        #format as count (%)
+        # format as count (%)
         descr <- paste0(as.numeric(tab_var[lev]),
                         " (", round((tab_var[lev]/n_total)*100, digits = d), 
                         "%)")
@@ -137,4 +137,5 @@ addci <- function(dat, est, lower, upper, digits = NULL) {
   df = df |> mutate(
     comb = paste0(!!sym(est), " [", !!sym(lower), " - ", !!sym(upper), "]")
   )
+  return(df)
 }

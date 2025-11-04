@@ -14,7 +14,7 @@ nrow(alspac_wide) #15645 participants
 # included sample (long format)
 alspac_inc = readRDS(here("DATA","ALSPAC_long.rds"))
 
-## Included/excluded ----
+## Code included/excluded ----
 included = unique(alspac_inc$ID)
 length(included) #8078 participants included
 rm(alspac_inc)
@@ -22,12 +22,15 @@ rm(alspac_inc)
 alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> as.factor()
 summary(alspac_wide$included) #7567 excluded
 
-## Attendance at each sweep ----
-agecols = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a") #proxy for attendance
+## Code attendance at each sweep ----
+# age at sweep used as proxy for attendance
+agecols = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a") 
+# sweeps denoted by first 2 letters
 new_names = paste0("in_", str_extract(agecols, pattern = "^[:alpha:]{2}")) 
 
 attend = alspac_wide |> select(ID, all_of(agecols))
-attend = make_misscols(df=attend, var_cols = agecols, new_names = new_names) |> select(ID, all_of(new_names))
+attend = make_misscols(df=attend, var_cols = agecols, new_names = new_names) |> 
+  select(ID, all_of(new_names))
 alspac_wide = merge(alspac_wide, attend, by = "ID")
 
 ## Rename age columns to be timepoint_age and convert to years ----
@@ -42,6 +45,7 @@ sumvars = c("sex", "income", "foodDiff", "IMD", "matAge", "matEd",
             grepv(pattern = "_age", x = names(alspac_wide)),
             grepv(pattern = "in_", x = names(alspac_wide)))
 
+## Recode 4-level FI to 3-level
 alspac_wide = alspac_wide |> 
   select(included, any_of(sumvars)) |> 
   mutate(foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
@@ -49,7 +53,7 @@ alspac_wide = alspac_wide |>
                                foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
            fct_relevel("Not difficult"))
 
-## Get demogs ----
+## Get ALSPAC demogs ----
 
 indat = alspac_wide |> filter(included=="1")
 alspac_in = get_sum_stats(dat = indat, vars = sumvars) |> 
@@ -67,9 +71,11 @@ rm(indat, exdat, alspac_wide)
 vars = c("Idnumber", "DaHGmag5", "DaZten02", "DaHGbord", "MaHcig01",
          "DaMedu03", "DaMsec01", "DaEthGpC")
 
-sw1 = read.delim("G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw1_b_v4_protect.tab") |> select(all_of(vars))
+sw1 = read.delim(
+  "G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw1_b_v4_protect.tab") |> 
+  select(all_of(vars))
 
-# recode to meaningful names
+# recode factors and levels to meaningful names
 gus_base = sw1 |> mutate(
   delivery_age = case_when(
     DaHGmag5==1 ~ "<20",
@@ -125,7 +131,8 @@ var_cols = grepv(pattern = "HGagC", names(gus_wide))
 new_names = paste0("in_", str_extract(var_cols, pattern = "^[:alpha:]{2}")) 
 
 attend = gus_wide |> select(Idnumber, all_of(var_cols))
-attend = make_misscols(df=attend, var_cols = var_cols, new_names = new_names) |> select(Idnumber, all_of(new_names))
+attend = make_misscols(df=attend, var_cols = var_cols, new_names = new_names) |> 
+  select(Idnumber, all_of(new_names))
 gus_wide = merge(gus_wide, attend, by = "Idnumber")
 
 ## Rename age columns and convert into years ----
@@ -143,7 +150,7 @@ sumvars = c("MeFaff04", "ALeSNim2", "Sex", "MeFaff3lvl", "EqvIncome",
 gus_wide = gus_wide |> 
   select(included, any_of(sumvars))
 
-## Get demogs ----
+## Get GUS demogs ----
 indat = gus_wide |> filter(included=="1")
 gus_in = get_sum_stats(dat = indat, vars = sumvars) |> 
   filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
