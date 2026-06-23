@@ -9,7 +9,7 @@ library(here)
 
 # load get_data_dict() and n_occ_missed()
 i_am("PREP/alspac_prep.R")
-source(here::here("FUNS", "prep.R"))
+source(here("FUNS", "prep.R"))
 
 # Selecting variables to extract ----
 
@@ -18,13 +18,12 @@ emot = c("kq348c", "ku707b", "kw6602b", "ta7025a", "tc4025a")
 conduct = c("kq348d", "ku708b", "kw6603b", "ta7025b", "tc4025b")
 hyper = c("kq348b", "ku706b", "kw6601b", "ta7025c", "tc4025c")
 peer = c("kq348e", "ku709b", "kw6604b", "ta7025d", "tc4025d")
-prosoc = c("kq348a", "ku705b", "kw6600b", "ta7025e", "tc4025e")
 
 # Age at each timepoint
 age = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a")
 
 # Covariates
-covars = c("cidB3421", "qlet", "k6200", "k6221", "kz021", "h470", "kimd2010q5")
+covars = c("cidB3421", "qlet", "k6200", "kz021", "h470", "kimd2010q5")
 
 # EPDS questions
 epds = c("k3030","k3031","k3032","k3033","k3034","k3035","k3036","k3037","k3038","k3039")
@@ -34,12 +33,10 @@ epds = c("k3030","k3031","k3032","k3033","k3034","k3035","k3036","k3037","k3038"
 # financial difficulties, smoking during pregnancy, EPDS prenatal, EPDS postnatal, ethnicity
 weightvars = c("mz028b", "c645a", "c755", "b032", "a006", "c525", "b665", "c601", "e391", "c804") 
 
-vars = c(covars, age, epds, emot, conduct, hyper, peer, prosoc, weightvars)
+vars = c(covars, age, epds, emot, conduct, hyper, peer, weightvars)
 
 # Read in data ----
-
-dat = read_dta("/exports/cmvm/datastore/scs/groups/ALSPAC/data/B3421/B3421_Whalley_20Mar25.dta", 
-               col_select = all_of(vars)) # saves reading the full thing in
+dat = read_dta("ALSPAC.dta", col_select = all_of(vars)) # saves reading the full thing in
 
 # Keep data dictionary in environment to explore
 dict = get_data_dict(dat)
@@ -49,14 +46,14 @@ dat = dat |> zap_labels() |> zap_label() |> zap_formats()
 
 # Recode NAs ----
 
-# invalid completion, triplet/quadruplet, not completed, omitted, missing, not known, not enrolled, don't know - all set to NA
-
+# invalid completion, triplet/quadruplet, not completed, omitted, missing, 
+# not known, not enrolled, don't know - all set to NA
 missings=c(-9999, -2, -1, -9, -8, -11, -10, -6, -5, -7)
 income_miss = c(0, 9)
 dat = dat |> mutate(across(everything(), ~ifelse(.x %in% missings, NA, .x)),
                     h470 = ifelse(h470 %in% income_miss, NA, h470),
                     across(all_of(epds), ~na_if(.x,0)),
-                    ID = str_c(cidB3421, qlet, sep = "_"))
+                    ID = str_c(cidB3421, qlet, sep = "_")) #make unique ppt ID
 head(dat[,1:3])
 dat = dat |> relocate(ID, .before = cidB3421)
 
@@ -73,9 +70,7 @@ alspac = dat |> mutate(
   foodDiff = factor(k6200, levels = c(4, 3, 2, 1), 
                  labels = c("Not difficult", "Slightly", "Fairly", "Very"),
                  exclude = 5),
-  matHelp = factor(k6221, levels = c(2, 1, 3), 
-                 labels = c("Right amount", "Too much", "Too little")),
-  IMD = factor(kimd2010q5, levels = c(1, 2, 3, 4, 5), ordered = T),
+  IMD = factor(kimd2010q5, levels = c(1, 2, 3, 4, 5), ordered = T), #1 is least deprived
   
   # weights 
   
@@ -115,22 +110,24 @@ alspac |> select(where(is.factor)) |> sapply(levels) # check reference levels
 # To be reverse scored: C26, C28, C29, C30, C31, C32, C33
 
 fwd = c("k3030", "k3031", "k3033")
-rev = c("k3032", "k3034", "k3034", "k3036", "k3037", "k3038", "k3039")
+rev = c("k3032", "k3034", "k3035", "k3036", "k3037", "k3038", "k3039")
 
 alspac = alspac |> mutate(
   across(all_of(fwd), ~ .x - 1),
   across(all_of(rev), ~ 4 - .x)
 )
 
+alspac |> select(all_of(epds)) |> summary()
+
 alspac$epds = alspac |> select(all_of(epds)) |> rowSums()
 
 alspac = alspac |> select(-all_of(epds))
 
-saveRDS(alspac, "/exports/eddie/scratch/s1659680/ALSPAC_Wide_Pre_Imputed.rds")
+saveRDS(alspac, "DATA/ALSPAC_Wide_Pre_Imputed.rds")
 
 # Count up missings ----
 
-alspac = readRDS("/exports/eddie/scratch/s1659680/ALSPAC_Wide_Pre_Imputed.rds")
+alspac = readRDS("DATA/ALSPAC_Wide_Pre_Imputed.rds")
 
 countcols = list(emot.miss = emot, conduct.miss = conduct, hyper.miss = hyper, peer.miss = peer, age.miss = age)
 
@@ -138,10 +135,10 @@ alspac = n_occ_missed(df = alspac, cols = countcols)
 alspac |> select(ends_with(".miss")) |> head() # just checking the function worked
 
 # exclude anyone with .miss = 5 (no data for any of the sweeps)
-# exclude anyone with missing sex, foodDiff or matHelp
+# exclude anyone with missing sex and foodDiff
 keepDat = alspac |> filter(
   if_all(ends_with(".miss"), function(x) x!=5) & 
-    if_all(c(sex, foodDiff, matHelp), function(x) is.na(x)==F)) 
+    if_all(c(sex, foodDiff), function(x) is.na(x)==F)) 
 nrow(keepDat)
 # 8080 ppts total remaining
 
@@ -222,7 +219,7 @@ head(final_alspac)
 
 saveRDS(final_alspac, file="alspac_weighted.rds")
 
-# to long ----
+# wide to long ----
 
 # make new column names for long columns
 
@@ -275,12 +272,6 @@ dat.long = dat.long |> mutate(
                         foodDiff == "Slightly" ~ "Slightly",
                         foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
     fct_relevel("Not difficult")
-)
-
-# make matHelp binary and make food_help
-dat.long = dat.long |> mutate(
-  help_bin = ifelse(matHelp=="Too little", "Not enough", "Enough") |> fct_relevel("Enough"),
-  food_help = paste0(foodDiff3,".", help_bin) |> fct_relevel("Not difficult.Enough")
 )
 
 saveRDS(dat.long, "/exports/igmm/datastore/GenScotDepression/users/eileen/Food_Ins/DATA/ALSPAC_long.rds")

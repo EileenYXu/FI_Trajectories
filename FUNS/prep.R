@@ -65,9 +65,10 @@ make_wt = function(mids.df, outcome, preds, idcol) {
       
     } else {
       
-      #add weight from previous sweep
+      #add weight from previous sweep to existing formula
       wt = paste0("ipw_", outcome[i-1])
       rhs = paste(c(preds, wt), collapse = " + ")
+      form = paste0(outcome[i]," ~ ", rhs)
       
       #specify to use new imputed data with the ipw
       fit = with(mids.df.ipw, glm(formula = as.formula(form), family = binomial))
