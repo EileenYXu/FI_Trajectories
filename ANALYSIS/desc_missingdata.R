@@ -16,11 +16,11 @@ alspac_inc = readRDS(here("DATA","ALSPAC_long.rds"))
 
 ## Code included/excluded ----
 included = unique(alspac_inc$ID)
-length(included) #8078 participants included
+length(included) #5737 participants included
 rm(alspac_inc)
 
 alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> as.factor()
-summary(alspac_wide$included) #7567 excluded
+summary(alspac_wide$included) #9908 excluded
 
 ## Code attendance at each sweep ----
 # age at sweep used as proxy for attendance
@@ -72,7 +72,7 @@ vars = c("Idnumber", "DaHGmag5", "DaZten02", "DaHGbord", "MaHcig01",
          "DaMedu03", "DaMsec01", "DaEthGpC")
 
 sw1 = read.delim(
-  "G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw1_b_v4_protect.tab") |> 
+  "DATA/GUS/gus_cohort1_sw1_b_v4_protect.tab") |> 
   select(all_of(vars))
 
 # recode factors and levels to meaningful names
@@ -121,10 +121,10 @@ gus_inc = readRDS(here("DATA","GUS_long.rds"))
 
 # get unique IDs for included participants and make column of included/excluded
 included = unique(gus_inc$Idnumber)
-length(included) #3167 participants included
+length(included) #3402 participants included
 
 gus_wide$included = ifelse(gus_wide$Idnumber %in% included, 1, 0) |> as.factor()
-summary(gus_wide$included) #666 excluded
+summary(gus_wide$included) #431 excluded
 
 ## Attendance at each sweep ----
 var_cols = grepv(pattern = "HGagC", names(gus_wide))
@@ -162,4 +162,4 @@ gus_ex = get_sum_stats(dat = exdat, vars = sumvars) |>
 descs = list("ALSPAC_included" = alspac_in, "ALSPAC_excluded" = alspac_ex,
              "GUS_included" = gus_in, "GUS_excluded" = gus_ex)
 
-openxlsx::write.xlsx(descs, here("OUTPUT/", "Descriptives.xlsx"))
+openxlsx::write.xlsx(descs, here("OUTPUT/", "Descriptives_revised.xlsx"))
