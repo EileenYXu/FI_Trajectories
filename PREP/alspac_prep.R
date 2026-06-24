@@ -29,36 +29,38 @@ covars = c("cidB3421", "qlet", "k6200", "kz021", "h470", "kimd2010q5")
 epds = c("k3030","k3031","k3032","k3033","k3034","k3035","k3036","k3037","k3038","k3039")
 
 # For generating weights 
-# Variables used: maternal age, maternal education level, maternal social class, parity, housing status,
-# financial difficulties, smoking during pregnancy, EPDS prenatal, EPDS postnatal, ethnicity
+# Variables used: maternal age, maternal education level, maternal social class, 
+# parity, housing status, financial difficulties, smoking during pregnancy, 
+# EPDS prenatal, EPDS postnatal, ethnicity
 weightvars = c("mz028b", "c645a", "c755", "b032", "a006", "c525", "b665", "c601", "e391", "c804") 
 
 vars = c(covars, age, epds, emot, conduct, hyper, peer, weightvars)
 
-# Read in data ----
+# Tidying ALSPAC data ----
 dat = read_dta("ALSPAC.dta", col_select = all_of(vars)) # saves reading the full thing in
 
 # Keep data dictionary in environment to explore
 dict = get_data_dict(dat)
+#write.csv(dict, "DATA/dict_usedvars.csv", row.names = F)
 
 # Remove labelling
 dat = dat |> zap_labels() |> zap_label() |> zap_formats()
 
-# Recode NAs ----
+# Recode NAs
+# consent withdrawn (-9999), not known (-2), not enrolled (-1),
+# invalid completion date (-9), triplet/quadruplet (-11), 
+# not completed (-10), section omitted (-6), >2 components omitted (-5), 
+missings=c(-9999, seq.int(from = -11, to = -1, by = 1))
+income_miss = c(0, 9) # other and dk
 
-# invalid completion, triplet/quadruplet, not completed, omitted, missing, 
-# not known, not enrolled, don't know - all set to NA
-missings=c(-9999, -2, -1, -9, -8, -11, -10, -6, -5, -7)
-income_miss = c(0, 9)
 dat = dat |> mutate(across(everything(), ~ifelse(.x %in% missings, NA, .x)),
                     h470 = ifelse(h470 %in% income_miss, NA, h470),
-                    across(all_of(epds), ~na_if(.x,0)),
+                    across(all_of(epds), ~na_if(.x,0)), #other text answer
                     ID = str_c(cidB3421, qlet, sep = "_")) #make unique ppt ID
-head(dat[,1:3])
 dat = dat |> relocate(ID, .before = cidB3421)
+head(dat[,1:3])
 
-# Recode factors ----
-
+## Recode factor levels
 alspac = dat |> mutate(
   
   # covariates 
@@ -69,10 +71,10 @@ alspac = dat |> mutate(
                 ordered = T),
   foodDiff = factor(k6200, levels = c(4, 3, 2, 1), 
                  labels = c("Not difficult", "Slightly", "Fairly", "Very"),
-                 exclude = 5),
+                 exclude = 5, ordered = T),
   IMD = factor(kimd2010q5, levels = c(1, 2, 3, 4, 5), ordered = T), #1 is least deprived
   
-  # weights 
+  # weighting variables
   
   matAge = mz028b,
   matEd = case_match(c645a,
@@ -82,7 +84,7 @@ alspac = dat |> mutate(
   matClass = case_match(c755,
                         c(1, 2) ~ "I-II",
                         c(3:6) ~ "III-V",
-                        65 ~ NA) |> fct_relevel("I-II"),
+                        65 ~ NA) |> fct_relevel("I-II"), #65 = armed forces
   parity = case_match(b032,
                       0 ~ "1st born",
                       1 ~ "2nd born",
@@ -103,7 +105,7 @@ lapply(alspac, class) # check classes
 
 alspac |> select(where(is.factor)) |> sapply(levels) # check reference levels
 
-# Calculate total EPDS ----
+# Calculate EPDS ----
 
 # values need to be recoded to be 0-3
 # Correct direction: C24, C25, C27
@@ -117,7 +119,8 @@ alspac = alspac |> mutate(
   across(all_of(rev), ~ 4 - .x)
 )
 
-alspac |> select(all_of(epds)) |> summary()
+alspac |> select(all_of(epds)) |> mutate(across(everything(), as.factor)) |> 
+  summary()
 
 alspac$epds = alspac |> select(all_of(epds)) |> rowSums()
 
@@ -125,27 +128,53 @@ alspac = alspac |> select(-all_of(epds))
 
 saveRDS(alspac, "DATA/ALSPAC_Wide_Pre_Imputed.rds")
 
-# Count up missings ----
+# Missing values ----
+#alspac = readRDS("DATA/ALSPAC_Wide_Pre_Imputed.rds")
 
-alspac = readRDS("DATA/ALSPAC_Wide_Pre_Imputed.rds")
+# Exclude participants with missing FI/covariate data
+completecols = c("foodDiff", "sex", "income", "IMD", "epds")
+include = complete.cases(alspac[,completecols])
+table(include) #8889 with missing FI/covariates were excluded, 6756 included
+inc_wide = alspac[include,]
 
-countcols = list(emot.miss = emot, conduct.miss = conduct, hyper.miss = hyper, peer.miss = peer, age.miss = age)
+sdqcols = list(emot.miss = emot, conduct.miss = conduct, hyper.miss = hyper, 
+                 peer.miss = peer)
 
-alspac = n_occ_missed(df = alspac, cols = countcols)
-alspac |> select(ends_with(".miss")) |> head() # just checking the function worked
+inc_wide = n_occ_missed(df = inc_wide, cols = sdqcols)
+inc_wide |> select(ends_with(".miss")) |> apply(2, max)
 
-# exclude anyone with .miss = 5 (no data for any of the sweeps)
-# exclude anyone with missing sex and foodDiff
-keepDat = alspac |> filter(
-  if_all(ends_with(".miss"), function(x) x!=5) & 
-    if_all(c(sex, foodDiff), function(x) is.na(x)==F)) 
-nrow(keepDat)
-# 8080 ppts total remaining
+# Keep participants with at least 2 measurements on any SDQ subscale
+keepDat = n_occ_missed(df = inc_wide, cols = sdqcols) |> 
+  filter(if_any(ends_with(".miss"), function(x) x<4))
+nrow(inc_wide) - nrow(keepDat) #957 excluded, 5799 remaining
+
+# Create unrelated sample ----
+
+# Select one participant from each set of twins, weighted by the proportion of 
+# valid information
+unrelated = keepDat |> group_by(cidB3421) |> filter(n()==1) |> ungroup() |> pull(ID)
+related = keepDat |> group_by(cidB3421) |> filter(n()!=1) |> ungroup() |> 
+  select(cidB3421, ID, qlet, ends_with(".miss")) |> 
+  mutate(total.miss = (emot.miss + conduct.miss + hyper.miss + peer.miss),
+         prop.valid = 1 - total.miss/20)
+
+set.seed(9093029)
+
+for (i in unique(related$cidB3421)) {
+  fam = related |> filter(cidB3421==i)
+  A = fam |> filter(qlet == "A") |> pull(prop.valid)
+  B = fam |> filter(qlet == "B") |> pull(prop.valid)
+  ppt = sample(x = c("A", "B"), prob = c(A, B), size = 1)
+  keep = fam |> filter(qlet==ppt) |> pull(ID)
+  unrelated = c(unrelated, keep)
+}
 
 # drop unused columns, except cid column which has family ids
-keepDat = keepDat |> select(-ends_with(".miss"), -all_of(c(weightvars, covars[-1])))
+keepDat = keepDat |> filter(ID %in% unrelated) |> 
+  select(-ends_with(".miss"), -all_of(c(weightvars, covars[-1])))
+rm(alspac, sdqcols, fam, inc_wide, related)
 
-# Now impute ----
+# Impute missing weights variables ----
 
 to_impute = c("matAge", "matEd", "matClass", "parity", "housing", "finDiff", "smokePreg", "epdsPre", "epdsPost", "ethnicity")
 logreg = c("ethnicity", "finDiff", "smokePreg", "matClass")
@@ -168,27 +197,23 @@ meth
 predmat = make.predictorMatrix(imp)
 predmat
 
-alspac_imp = mice(imp, m = 20, method = meth, seed = 2025)
-
+alspac_imp = futuremice(imp, m = 20, method = meth, parallelseed = 2025)
 alspac_imp = cbind(alspac_imp, not_imputed)
-
-save(alspac_imp, file = "ALSPAC_Imputed.rda")
 
 # Make weights ----
 
-load("ALSPAC_Imputed.rda")
-
-# First, make columns for attendance at each sweep
-var_cols = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a") # age at sweep - proxy for attendance
-new_names = paste0("in_", str_extract(var_cols, pattern = "^[:alpha:]{2}")) # alspac sweeps are denoted by the first 2 characters
+# First, make columns for attendance at each sweep using age as proxy for attendance
+var_cols = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a")
+# alspac sweeps are denoted by the first 2 characters:
+new_names = paste0("in_", str_extract(var_cols, pattern = "^[:alpha:]{2}")) 
 
 attend = keepDat |> select(ID, all_of(var_cols))
-attend = make_misscols(df=attend, var_cols = var_cols, new_names = new_names) |> select(all_of(new_names))
+attend = make_misscols(df=attend, var_cols = var_cols, new_names = new_names) |> 
+  select(all_of(new_names))
 
 alspac_imp = cbind(alspac_imp, attend)
 
-# glm to make weights ----
-
+# Predict response at each sweep ----
 wt_preds = c("sex", "ethnicity", "finDiff", "smokePreg", "matClass", "matAge", "epdsPre", "epdsPost", "matEd", "parity", "housing")
 att = names(alspac_imp$data)[grep("in_", names(alspac_imp$data))]
 
@@ -202,70 +227,43 @@ final_alspac = cbind(alspac_imp$data, alspac_weighted$weights_df)
 
 head(final_alspac)
 nrow(final_alspac)
-tail(final_alspac)
-dim(final_alspac)
 names(final_alspac)
-glimpse(final_alspac)
 
-final_alspac %>% select(grep("in_", names(.))) %>% summary()
-final_alspac %>% select(grep("in_", names(.))) %>% head()
+final_alspac |>  select(matches("in_")) |>  summary()
 
 ## save weights
+saveRDS(alspac_weighted, file="DATA/alspac_weights.rds")
 
-saveRDS(alspac_weighted, file="estimated_alspac_weights.rds")
-
-## save final dataset? 
-head(final_alspac)
-
-saveRDS(final_alspac, file="alspac_weighted.rds")
-
-# wide to long ----
+# Wide to long ----
 
 # make new column names for long columns
 
-dat = readRDS("/exports/eddie/scratch/s1659680/alspac_weighted.rds")
-
-dat = dat |> 
-  rename_with(
-  .cols = all_of(age),
-  ~paste0(
-    str_extract(.x, pattern = "^[:alpha:]{2}"),"_age")) |> 
-  rename_with(
-    .cols = all_of(conduct),
-    ~paste0(
-      str_extract(.x, pattern = "^[:alpha:]{2}"),"_conduct")) |> 
-  rename_with(
-    .cols = all_of(emot),
-    ~paste0(
-      str_extract(.x, pattern = "^[:alpha:]{2}"),"_emot")) |> 
-  rename_with(
-    .cols = all_of(hyper),
-    ~paste0(
-      str_extract(.x, pattern = "^[:alpha:]{2}"),"_hyper")) |> 
-  rename_with(
-    .cols = all_of(peer),
-    ~paste0(
-      str_extract(.x, pattern = "^[:alpha:]{2}"),"_peer")) |> 
-  rename_with(
-    .cols = all_of(prosoc),
-    ~paste0(
-      str_extract(.x, pattern = "^[:alpha:]{2}"),"_prosoc")) |> 
-  rename_with(
-    .cols = all_of(grep("ipw_in_", names(dat))),
-    ~paste0(
-      str_extract(.x, pattern = "[:alpha:]{2}$"),"_ipw"))
+dat = final_alspac |> 
+  rename_with(.cols = all_of(age),
+              ~paste0(str_extract(.x, pattern = "^[:alpha:]{2}"),"_age")) |> 
+  rename_with(.cols = all_of(conduct),
+              ~paste0(str_extract(.x, pattern = "^[:alpha:]{2}"),"_conduct")) |> 
+  rename_with(.cols = all_of(emot),
+              ~paste0(str_extract(.x, pattern = "^[:alpha:]{2}"),"_emot")) |> 
+  rename_with(.cols = all_of(hyper),
+              ~paste0(str_extract(.x, pattern = "^[:alpha:]{2}"),"_hyper")) |> 
+  rename_with(.cols = all_of(peer),
+              ~paste0(str_extract(.x, pattern = "^[:alpha:]{2}"),"_peer")) |> 
+  rename_with(.cols = all_of(matches("ipw_in_")),
+              ~paste0(str_extract(.x, pattern = "[:alpha:]{2}$"),"_ipw"))
 
 dat.long = dat |> 
-  pivot_longer(cols = grep(pattern = "^kq_|^ku_|^kw_|^ta_|^tc_", names(dat)), names_sep = "_",
-               names_to = c("sweep", ".value"))
+  pivot_longer(cols = grep(pattern = "^kq_|^ku_|^kw_|^ta_|^tc_", names(dat)), 
+               names_sep = "_", names_to = c("sweep", ".value"))
 
-##For consistent sample size, restrict sample to those with complete SDQ data (listwise deletion of missing rows - i.e. if they missed a timepoint they can still be included), food insecurity data and covariate data
-completecols = c("age", "conduct", "emot", "hyper", "peer", "prosoc", "sex",
-                 "income", "foodDiff", "IMD", "epds")
-dat.long = dat.long[complete.cases(dat.long[, completecols]),]
-dat.long$Age = dat.long$age/12 #change age into years
+## Drop rows with no data on any SDQ subscales
+dat.long = dat.long |> mutate(Age = age/12) |> 
+  select("ID", "sweep", "foodDiff", "Age", "sex", "income", "IMD", "epds", 
+         "conduct", "emot", "hyper", "peer", "ipw") |> 
+  filter(if_any(.cols = c(conduct, emot, hyper, peer), 
+                .fns = function(x) !is.na(x)))
 
-#mean centre age and make 3-level FI
+## Mean centre age and make 3-level FI
 dat.long = dat.long |> mutate(
   age.cent = Age - mean(Age),
   foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
@@ -274,4 +272,4 @@ dat.long = dat.long |> mutate(
     fct_relevel("Not difficult")
 )
 
-saveRDS(dat.long, "/exports/igmm/datastore/GenScotDepression/users/eileen/Food_Ins/DATA/ALSPAC_long.rds")
+saveRDS(dat.long, "DATA/ALSPAC_long.rds")

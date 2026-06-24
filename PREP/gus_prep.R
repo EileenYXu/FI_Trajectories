@@ -117,7 +117,7 @@ saveRDS(dat_wide, "DATA/GUS_wide.rds")
 rm(sw5, sw6, sw7, sw8, sw9, sw10, sdq)
 
 # Remove columns not used in analyses
-#dat_wide = readRDS("DATA/GUS_wide.rds")
+dat_wide = readRDS("DATA/GUS_wide.rds")
 
 cols = "IDNumber|MeFaff|Sex|Eqv5|Sf12mn|ALeSNim2|HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|wtbth2"
 dat_wide = dat_wide |> select(matches(cols))
@@ -133,17 +133,14 @@ inc_wide = dat_wide[include,]
 sdqcols = list(emot.miss = grepv("Dsdem1", names(dat_wide)), 
                conduct.miss = grepv("Dsdco1", names(dat_wide)), 
                hyper.miss = grepv("Dsdhy1", names(dat_wide)), 
-               peer.miss = grepv("Dsdpr1", names(dat_wide)), 
-               age.miss = grepv("HGagC", names(dat_wide)))
+               peer.miss = grepv("Dsdpr1", names(dat_wide)))
 
 n_occ_missed(df = inc_wide, cols = sdqcols) |> 
   select(ends_with(".miss")) |> apply(2, max)
 
-# Exclude participants with fewer than 2 measurements on all SDQ subscales 
-# (linear model needs 2 measurements at minimum)
+# Keep participants with at least 2 measurements on any SDQ subscale
 inc_wide = n_occ_missed(df = inc_wide, cols = sdqcols) |> 
-  filter(age.miss !=5 & (emot.miss <5 | conduct.miss <5 | hyper.miss <5 |
-           peer.miss <5))
+  filter(if_any(ends_with(".miss"), function(x) x<5))
 nrow(dat_wide[include,]) - nrow(inc_wide) #188 excluded
 
 # Wide to long ----
@@ -156,8 +153,11 @@ dat_long = inc_wide |> pivot_longer(
   names_pattern = "(^D[efghij])(HGagC|Dsdem1|Dsdco1|Dsdhy1|Dsdpr1|WTbth2)"
 )
 
+# Drop rows with no data on any SDQ subscales
 dat_long = dat_long |> 
+  filter(if_any(.cols = c(Dsdem1, Dsdco1, Dsdhy1, Dsdpr1), 
+                .fns = function(x) !is.na(x))) |> 
   mutate(Age = HGagC/12, #Convert age to years
-         age.cent = (HGagC/12) - mean((HGagC/12), na.rm = T)) #age in years and mean centred
+         age.cent = (HGagC/12) - mean((HGagC/12), na.rm = T)) #mean centre age
 
 saveRDS(dat_long, "DATA/GUS_long.rds")

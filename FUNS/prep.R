@@ -74,25 +74,22 @@ make_wt = function(mids.df, outcome, preds, idcol) {
       fit = with(mids.df.ipw, glm(formula = as.formula(form), family = binomial))
     }
     
-    # get predicted probabilities in each imputed dataset
-    probs = lapply(fit$analyses, function(mod) predict(mod, type = "response"))
+    # calculate pooled predicted probability for each ppt
+    prob_pooled = predict_mi(fit, pool = TRUE, type = "response", se.fit = F)
     
-    # pool to get a mean for each ppt
-    probs_mat = do.call(cbind, probs)
-    prob_pooled = rowMeans(probs_mat)
-
     ipw = 1/prob_pooled
-    marginal_prob = mean(mids.df$data[[outcome[i]]])
+    marginal_prob = as.character(mids.df$data[[outcome[i]]]) |> as.numeric() |> 
+      mean()
     ipw_stable = ipw*marginal_prob
     
+    df = data.frame(prob_pooled, ipw_stable)
+    names(df) = c(paste0("prob_", outcome[i]), paste0("ipw_", outcome[i]))
+    
     # save to output df
-    weights_df[[paste0("prob_", outcome[i])]] = prob_pooled
-    weights_df[[paste0("ipw_", outcome[i])]] = ipw_stable
+    weights_df = cbind(weights_df, df)
     
-    # save ipw_stable to mids.df
-    
-    mids.df.ipw = cbind(mids.df, weights_df[[paste0("ipw_", outcome[i])]])
-    
+    # add to mids.df
+    mids.df.ipw = cbind(mids.df, df)
     sweep_prob[[outcome[i]]] = marginal_prob
   } 
   
