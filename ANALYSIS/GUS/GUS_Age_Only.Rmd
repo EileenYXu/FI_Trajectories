@@ -10,12 +10,12 @@ editor_options:
 ---
 
 Identifying which polynomial terms to include in longitudinal models of SDQ domains for the whole sample and for males and females separately. This code fits 4 models for each SDQ domain and performs model comparisons to compare fit metrics e.g. AIC, BIC.\
-   
-Linear model: SDQ ~ age.cent + (1 + age.cent | ID)\
-Quadratic model: SDQ ~ age.cent + age.cent^2 + (1 + age.cent | ID)\
-Cubic model:  SDQ ~ age.cent + age.cent^2 + age.cent^3 + (1 + age.cent | ID)\
-Quartic model:  SDQ ~ age.cent + age.cent^2 + age.cent^3 + age.cent^4 + (1 + age.cent | ID)\
-  
+
+Linear model: SDQ \~ age.cent + (1 + age.cent \| ID)\
+Quadratic model: SDQ \~ age.cent + age.cent\^2 + (1 + age.cent \| ID)\
+Cubic model: SDQ \~ age.cent + age.cent\^2 + age.cent\^3 + (1 + age.cent \| ID)\
+Quartic model: SDQ \~ age.cent + age.cent\^2 + age.cent\^3 + age.cent\^4 + (1 + age.cent \| ID)\
+
 Input data (dat) should be in long format, with the following variables (at minimum):\
 
 - unique participant ID\
@@ -36,14 +36,15 @@ source(here("FUNS", "mods.R"))
 source(here("FUNS", "plot.R"))
 ```
 
-# Full sample {.tabset}
+# Full sample
 
 ```{r read data, results='asis'}
 dat = readRDS(here("DATA", "GUS_long.rds"))
 
-dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, peer = Dsdpr1, WTbth2 = WTbth2)
+dat = rename(dat, emot = Dsdem1, conduct = Dsdco1, hyper = Dsdhy1, 
+             peer = Dsdpr1, WTbth2 = WTbth2)
 
-sumtable = dat %>% group_by(across(sweep)) %>%
+sumtable = dat |> group_by(across(sweep)) |>
           summarise(N = n(),
                     Age_M = m_sd(Age),
                     Age_Myrs = age_ym(mean(Age, na.rm = T)),
@@ -53,13 +54,13 @@ sumtable = dat %>% group_by(across(sweep)) %>%
                     Hyper = m_sd(hyper),
                     Peer = m_sd(peer))
 
-kbl(sumtable) %>%
+kbl(sumtable) |> 
   kable_styling(full_width = F)
 
 modTypes = c("linear", "quadratic", "cubic", "quartic")
 ```
 
-## Conduct problems
+## Conduct problems {.tabset}
 
 ### Fit models
 
@@ -87,7 +88,7 @@ emmeans.plot = traj_plot(c.dat) + xlab("Age") + ylab("SDQ Conduct")
 emmeans.plot
 ```
 
-## Emotional problems
+## Emotional problems {.tabset}
 
 ### Fit models
 
@@ -114,8 +115,7 @@ emmeans.plot = traj_plot(e.dat) + xlab("Age") + ylab("SDQ Emotional")
 emmeans.plot
 ```
 
-
-## Hyperactivity
+## Hyperactivity {.tabset}
 
 ### Fit models
 
@@ -134,7 +134,6 @@ hyper = do.call(anova, unname(fits)) |>  as.data.frame() |>
 hyper |> kbl()  |>  kable_styling(full_width = F)
 ```
 
-
 ### Plot model (Linear)
 
 ```{r}
@@ -144,8 +143,7 @@ emmeans.plot = traj_plot(h.dat) + xlab("Age") + ylab("SDQ Hyperactivity")
 emmeans.plot
 ```
 
-
-## Peer problems
+## Peer problems {.tabset}
 
 ### Fit models
 

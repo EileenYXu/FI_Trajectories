@@ -1,4 +1,5 @@
-#### miscellaneous code for paper ####
+#### Tidy up results tables ####
+
 library(here)
 library(readxl)
 i_am("ANALYSIS/miscPaper.R")

@@ -242,7 +242,7 @@ print(peerfits[[1]]$diagnostics)
 p.preds = get_preds(dat = dat, obj = peerfits[[1]], age_y = "Age", 
                     emm_at = emm_at, specs = c("age.cent", "foodDiff3"))
 
-plot.unadjusted[["peer"]] = traj_plot(c.preds, colour = "foodDiff3") + 
+plot.unadjusted[["peer"]] = traj_plot(p.preds, colour = "foodDiff3") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
   xlab("Age (years)")
 
