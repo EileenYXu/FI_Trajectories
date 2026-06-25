@@ -1,7 +1,8 @@
-#### miscellaneous code for paper ####
+#### Tidy up results tables ####
+
 library(here)
 library(readxl)
-i_am("ANALYSIS/miscPaper.R")
+i_am("ANALYSIS/tidyTables.R")
 source(here("FUNS", "packages.R"))
 
 # scores at ages formatted for into a neat table for each cohort  ----

@@ -48,7 +48,7 @@ sumtable = dat %>% group_by(across(sweep)) %>%
                     Hyper = m_sd(hyper),
                     Peer = m_sd(peer))
 
-kbl(sumtable) %>%
+kbl(sumtable) |> 
   kable_styling(full_width = F)
 
 modTypes = c("linear", "quadratic", "cubic", "quartic")

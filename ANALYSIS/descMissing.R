@@ -1,7 +1,7 @@
-#### Demographics of included and excluded ppts in ALSPAC and GUS ####
+#### Compare demographics of included and excluded ppts in ALSPAC and GUS ####
 
 library(here)
-i_am("ANALYSIS/desc_missingdata.R")
+i_am("ANALYSIS/descMissing.R")
 source(here("FUNS", "packages.R"))
 source(here("FUNS", "prep.R"))
 
@@ -19,7 +19,8 @@ included = unique(alspac_inc$ID)
 length(included) #5737 participants included
 rm(alspac_inc)
 
-alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> as.factor()
+alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> 
+  as.factor()
 summary(alspac_wide$included) #9908 excluded
 
 ## Code attendance at each sweep ----
@@ -34,8 +35,9 @@ attend = make_misscols(df=attend, var_cols = agecols, new_names = new_names) |>
 alspac_wide = merge(alspac_wide, attend, by = "ID")
 
 ## Rename age columns to be timepoint_age and convert to years ----
-alspac_wide = rename_with(.data = alspac_wide, .cols = all_of(agecols), 
-                          ~gsub(pattern = "\\d{3,}a", replacement = "_age", .x)) |> 
+alspac_wide = rename_with(
+  .data = alspac_wide, .cols = all_of(agecols), 
+  ~gsub(pattern = "\\d{3,}a", replacement = "_age", .x)) |> 
   mutate(across(.cols = ends_with("_age"), ~ .x/12))
 
 ## Filter demographic vars and code as factors ----
@@ -47,11 +49,11 @@ sumvars = c("sex", "income", "foodDiff", "IMD", "matAge", "matEd",
 
 ## Recode 4-level FI to 3-level
 alspac_wide = alspac_wide |> 
-  select(included, any_of(sumvars)) |> 
-  mutate(foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
-                               foodDiff == "Slightly" ~ "Slightly",
-                               foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
-           fct_relevel("Not difficult"))
+  select(included, any_of(sumvars)) |> mutate(
+    foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
+                          foodDiff == "Slightly" ~ "Slightly",
+                          foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
+      fct_relevel("Not difficult"))
 
 ## Get ALSPAC demogs ----
 
