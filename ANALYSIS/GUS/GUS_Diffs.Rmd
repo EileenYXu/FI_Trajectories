@@ -280,20 +280,19 @@ test[4] |> kable()
 
 ## Compare covariates
 
-Sex: 
+### Sex: 
 
 ```{r}
-table(De$Sex, De$MeFaff04) |> kbl() |> kable_styling()
+table(De$Sex, De$MeFaff04) |> kable()
 ```
 
-Income:
+### Income:
 
 ```{r}
-table(De$DeEqv5, De$MeFaff04) |> kbl() |> kable_styling()
+table(De$DeEqv5, De$MeFaff04) |> kable()
 ```
 
-
-Maternal MH:
+### Maternal MH:
 
 ```{r}
 De |> group_by(MeFaff04) |> 
@@ -303,6 +302,6 @@ De |> group_by(MeFaff04) |>
 SIMD (1 = least deprived):
 
 ```{r}
-table(De$ALeSNim2, De$MeFaff04) |> kbl() |> kable_styling()
+table(De$ALeSNim2, De$MeFaff04) |> kable()
 ```
 

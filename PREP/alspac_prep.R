@@ -129,7 +129,7 @@ alspac = alspac |> select(-all_of(epds))
 saveRDS(alspac, "DATA/ALSPAC_Wide_Pre_Imputed.rds")
 
 # Missing values ----
-#alspac = readRDS("DATA/ALSPAC_Wide_Pre_Imputed.rds")
+alspac = readRDS("DATA/ALSPAC_Wide_Pre_Imputed.rds")
 
 # Exclude participants with missing FI/covariate data
 completecols = c("foodDiff", "sex", "income", "IMD", "epds")
@@ -257,19 +257,19 @@ dat.long = dat |>
                names_sep = "_", names_to = c("sweep", ".value"))
 
 ## Drop rows with no data on any SDQ subscales
-dat.long = dat.long |> mutate(Age = age/12) |> 
-  select("ID", "sweep", "foodDiff", "Age", "sex", "income", "IMD", "epds", 
-         "conduct", "emot", "hyper", "peer", "ipw") |> 
+dat.long = dat.long |> 
   filter(if_any(.cols = c(conduct, emot, hyper, peer), 
-                .fns = function(x) !is.na(x)))
+                .fns = function(x) !is.na(x))) |> 
+  mutate(Age = age/12) |> 
+  select("ID", "sweep", "foodDiff", "Age", "sex", "income", "IMD", "epds", 
+         "conduct", "emot", "hyper", "peer", "ipw")
 
 ## Mean centre age and make 3-level FI
 dat.long = dat.long |> mutate(
-  age.cent = Age - mean(Age),
-  foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
-                        foodDiff == "Slightly" ~ "Slightly",
-                        foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
-    fct_relevel("Not difficult")
-)
+  age.cent = Age - mean(Age, na.rm = T),
+  foodDiff3 = factor(
+    foodDiff, levels = c("Not difficult", "Slightly", "Fairly", "Very"),
+    labels = c("Not difficult", "Slightly", "Fairly/Very", "Fairly/Very"), 
+    ordered = T))
 
 saveRDS(dat.long, "DATA/ALSPAC_long.rds")

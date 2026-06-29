@@ -64,7 +64,7 @@ fit_lmer <- function(dat, outcome, age, grp = NULL, covs = NULL, id,
   
   # fit lmer model
   fit <- lmer(formula = as.formula(form),
-              REML = FALSE ,
+              REML = FALSE,
               data = dat,
               weights = wt,
               control = lmerControl(optimizer="bobyqa",

@@ -78,7 +78,7 @@ make_emm_at <- function(dat=NULL, age_y, agevar) {
     age_y <- dat[[age_y]]  
   }
   
-  age_vals <-  seq(min(age_y), max(age_y), 0.5) 
+  age_vals <-  seq(min(age_y, na.rm = T), max(age_y, na.rm = T), 0.5) 
   
   #mean center to fit with the model
   age_cent <-  age_vals - mean(age_y, na.rm = T) 

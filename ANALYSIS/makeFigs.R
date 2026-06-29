@@ -14,7 +14,9 @@ leg.df = data.frame(
   x = rnorm(9),
   y = rnorm(9),
   FI = rep(c("No FI", "Low FI", "High FI"), times = 3)
-) |> mutate(low = y-1, hi = y+1)
+) |> mutate(low = y-1, hi = y+1, 
+            FI = factor(FI, levels = c("No FI", "Low FI", "High FI"),
+                        ordered=TRUE))
 
 # plot dummy df
 leg = ggplot(leg.df) +
@@ -42,6 +44,7 @@ as_ggplot(legend)
 load(file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
 alspac = list(conduct = c.adj, emot = e.adj, hyper = h.adj, peer = p.adj)
 rm(c.adj, e.adj, h.adj, p.adj)
+
 load(file = here("OUTPUT/GUS", "GUS_plotdat_adjusted.rda"))
 gus = list(conduct = c.adj, emot = e.adj, hyper = h.adj, peer = p.adj)
 rm(c.adj, e.adj, h.adj, p.adj)
@@ -59,8 +62,9 @@ names(gus.plots) = names(gus.plots) |>
 
 # make x axes limits consistent for all plots
 plotlist = list(alspac.plots, gus.plots) |> unlist(recursive = FALSE)
-plotlist = plotlist |> map(\(x) x + scale_x_continuous(
-  breaks = c(4,6,8,10,12,14,16,18)))
+plotlist = plotlist |> 
+  map(\(x) x + scale_x_continuous(limits = c(4, 18),
+                                  breaks = c(4,6,8,10,12,14,16,18)))
 
 # make y axes consistent between ALSPAC and GUS
 # conduct
@@ -109,12 +113,11 @@ nolabs
 par("din")
 
 ggsave(plot = nolabs, 
-       filename = here("OUTPUT", "Traj_Adjusted_nolabs.svg"),
+       filename = here("OUTPUT", "Traj_Adjusted_nolabs.pdf"),
        height = 5, width = 11, units = "in")
 ggsave(plot = nolabs, 
        filename = here("OUTPUT", "Traj_Adjusted_nolabs.png"), 
        height = 5, width = 11, units = "in")
-
 
 ## Try adding labels ----
 ## make text labels for rows (study) and columns (SDQ)
@@ -149,7 +152,7 @@ fig = wrap_elements(full=ptch) +
         legend.margin = margin(0,0,0,0,"pt"))
 fig
 
-ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.svg"), 
+ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.pdf"), 
        height = 6, width = 12, units = "in")
 ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.png"), 
        height = 6, width = 12, units = "in")

@@ -12,7 +12,7 @@ emm_options(lmerTest.limit = 40000, pbkrtest.limit = 40000)
 # ggplot theme ----
 
 # use Okabe-Ito (2008) colourblind-friendly palette by default
-pal <- c("#E69F00","#56B4E9","#009E73",
+pal <- c("#E69F00","#009E73","#56B4E9",
          "#F5C710","#0072B2","#D55E00",
          "#CC79A7","#999999","#000000")
 

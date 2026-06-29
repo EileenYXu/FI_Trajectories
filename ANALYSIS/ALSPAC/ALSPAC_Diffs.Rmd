@@ -1,0 +1,259 @@
+---
+title: "ALSPAC_Diffs"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, results = "asis")
+library(here)
+i_am("ANALYSIS/ALSPAC/ALSPAC_FI.Rmd")
+source(here("FUNS", "packages.R"))
+```
+
+```{r read data}
+ALSPAC = readRDS(here("DATA", "ALSPAC_long.rds"))
+
+FItab = table(ALSPAC$sweep, ALSPAC$foodDiff) |> as.matrix()
+Agetab = ALSPAC |> group_by(across(sweep)) |> 
+  summarise(N = n(), Age = age_ym(mean(Age, na.rm = T))) |> as.matrix()
+cbind(Agetab, FItab) |> kbl() |> kable_styling(full_width = F)
+```
+
+# Compare SDQ scores in each sweep
+
+## KQ {.tabset}
+
+"Fairly difficult" and "Very difficult" groups differ in conduct problems, but not on any other SDQ subscales.
+
+```{r}
+kq = ALSPAC |> filter(sweep=="kq")
+kq |> group_by(foodDiff) |> 
+  summarise(conduct = m_sd(conduct),
+            emot = m_sd(emot),
+            hyper = m_sd(hyper),
+            peer = m_sd(peer)) |> kable()
+
+test = list("conduct"=kq$conduct, "emot"=kq$emot, 
+            "hyper"=kq$hyper, "peer"=kq$peer) |> 
+  map(\(x) pairwise.wilcox.test(x, kq$foodDiff)$p.value) # differences in conduct
+```
+
+### Conduct problems
+
+```{r results='asis'}
+test[1] |> kable()
+```
+
+### Emotional problems
+
+```{r results='asis'}
+test[2] |> kable()
+```
+
+### Hyperactivity problems
+
+```{r results='asis'}
+test[3] |> kable()
+```
+
+### Peer problems
+
+```{r results='asis'}
+test[4] |> kable()
+```
+
+## KU {.tabset}
+
+"Fairly difficult" and "Very difficult" groups do not differ in score for any SDQ
+
+```{r}
+ku = ALSPAC |> filter(sweep=="ku")
+ku |> group_by(foodDiff) |> 
+  summarise(conduct = m_sd(conduct),
+            emot = m_sd(emot),
+            hyper = m_sd(hyper),
+            peer = m_sd(peer)) |> kbl() |> kable_styling()
+
+test = list("conduct"=ku$conduct, "emot"=ku$emot, 
+            "hyper"=ku$hyper, "peer"=ku$peer) |> 
+  map(\(x) pairwise.wilcox.test(x, ku$foodDiff)$p.value)
+```
+
+### Conduct problems
+
+```{r results='asis'}
+test[1] |> kable()
+```
+
+### Emotional problems
+
+```{r results='asis'}
+test[2] |> kable()
+```
+
+### Hyperactivity problems
+
+```{r results='asis'}
+test[3] |> kable()
+```
+
+### Peer problems
+
+```{r results='asis'}
+test[4] |> kable()
+```
+
+## KW {.tabset}
+
+"Fairly difficult" and "Very difficult" groups do not differ
+
+```{r}
+kw = ALSPAC |> filter(sweep=="kw")
+kw |> group_by(foodDiff) |> 
+  summarise(conduct = m_sd(conduct),
+            emot = m_sd(emot),
+            hyper = m_sd(hyper),
+            peer = m_sd(peer)) |> kbl() |> kable_styling()
+
+test = list("conduct"=kw$conduct, "emot"=kw$emot, 
+            "hyper"=kw$hyper, "peer"=kw$peer) |> 
+  map(\(x) pairwise.wilcox.test(x, kw$foodDiff)$p.value)
+```
+
+### Conduct problems
+
+```{r results='asis'}
+test[1] |> kable()
+```
+
+### Emotional problems
+
+```{r results='asis'}
+test[2] |> kable()
+```
+
+### Hyperactivity problems
+
+```{r results='asis'}
+test[3] |> kable()
+```
+
+### Peer problems
+
+```{r results='asis'}
+test[4] |> kable()
+```
+
+## TA {.tabset}
+
+"Fairly difficult" and "Very difficult" groups do not differ
+
+```{r}
+ta = ALSPAC |> filter(sweep=="ta")
+ta |> group_by(foodDiff) |> 
+  summarise(conduct = m_sd(conduct),
+            emot = m_sd(emot),
+            hyper = m_sd(hyper),
+            peer = m_sd(peer)) |> kbl() |> kable_styling()
+
+test = list("conduct"=ta$conduct, "emot"=ta$emot, 
+            "hyper"=ta$hyper, "peer"=ta$peer) |> 
+  map(\(x) pairwise.wilcox.test(x, ta$foodDiff)$p.value)
+```
+
+### Conduct problems
+
+```{r results='asis'}
+test[1] |> kable()
+```
+
+### Emotional problems
+
+```{r results='asis'}
+test[2] |> kable()
+```
+
+### Hyperactivity problems
+
+```{r results='asis'}
+test[3] |> kable()
+```
+
+### Peer problems
+
+```{r results='asis'}
+test[4] |> kable()
+```
+
+## TC {.tabset}
+
+"Fairly difficult" and "Very difficult" groups do not differ
+
+```{r}
+tc = ALSPAC |> filter(sweep=="tc")
+tc |> group_by(foodDiff) |> 
+  summarise(conduct = m_sd(conduct),
+            emot = m_sd(emot),
+            hyper = m_sd(hyper),
+            peer = m_sd(peer)) |> kbl() |> kable_styling()
+
+test = list("conduct"=tc$conduct, "emot"=tc$emot, 
+            "hyper"=tc$hyper, "peer"=tc$peer) |> 
+  map(\(x) pairwise.wilcox.test(x, tc$foodDiff)$p.value)
+```
+
+### Conduct problems
+
+```{r results='asis'}
+test[1] |> kable()
+```
+
+### Emotional problems
+
+```{r results='asis'}
+test[2] |> kable()
+```
+
+### Hyperactivity problems
+
+```{r results='asis'}
+test[3] |> kable()
+```
+
+### Peer problems
+
+```{r results='asis'}
+test[4] |> kable()
+```
+
+## Compare covariates
+
+### Sex: 
+
+```{r}
+covars = ALSPAC |> select(ID, foodDiff, sex, income, epds, IMD) |> 
+  unique()
+
+table(covars$sex, covars$foodDiff) |> kable()
+```
+
+### Income:
+
+```{r}
+table(covars$income, covars$foodDiff) |> kable()
+```
+
+### Maternal MH:
+
+```{r}
+covars |> group_by(foodDiff) |> 
+  summarise(N = n(), SF12 = m_sd(epds)) |> kbl() |> kable_styling()
+```
+
+### SIMD (1 = least deprived):
+
+```{r}
+table(covars$IMD, covars$foodDiff) |> kable()
+```

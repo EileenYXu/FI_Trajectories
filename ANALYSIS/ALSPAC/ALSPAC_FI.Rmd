@@ -54,7 +54,7 @@ plot.unadjusted = list()
 plot.adjusted = list()
 ```
 
-**Mean age: `r mean(dat$Age)` years**
+**Mean age: `r mean(dat$Age, na.rm = T)` years**
 
 # Conduct problems {.tabset}
 
@@ -314,7 +314,7 @@ lapply(results.fitstats, function(x) kable(x, digits= 3))
 contrmods = list("conduct" = conductfits[[4]], "emot" = emotfits[[4]], "hyper" = hyperfits[[4]], "peer" = peerfits[[4]])
 
 # fit contrasts at age 7, 9, 11, 13, 15
-emm_at$age.cent = c(7, 9, 11, 13, 15) - mean(dat$Age)
+emm_at$age.cent = c(7, 9, 11, 13, 15) - mean(dat$Age, na.rm = T)
 
 # get the emmeans output object - has predicted values but also some more stuff
 emm.list = contrmods |> 
@@ -330,7 +330,7 @@ contrast_alspac = list(
 
 # run the contrasts bit
 results.contr = emm.list |> 
-  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age),
+  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age, na.rm = T),
                          method = contrast_alspac, adjust = "fdr"))
 
 openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))
@@ -338,7 +338,7 @@ openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))
 # save the predicted scores at each age
 results.scores = emm.list |> 
   map(\(x) broom::tidy(x, conf.int = T)) |> 
-  map(\(x) mutate(x, Age = age.cent + mean(dat$Age))) |> 
+  map(\(x) mutate(x, Age = age.cent + mean(dat$Age, na.rm = T))) |> 
   map(\(x) relocate(x, Age))
 
 openxlsx::write.xlsx(results.scores, here("OUTPUT/ALSPAC", "FI_Scores.xlsx"))

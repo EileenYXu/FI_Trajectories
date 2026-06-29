@@ -3,7 +3,8 @@ i_am("ANALYSIS/knitRmds.R")
 setwd(here())
 
 #knit alspac files
-
+rmarkdown::render(input = here("ANALYSIS", "ALSPAC", "ALSPAC_Diffs.Rmd"),
+                  output_dir = here("OUTPUT", "ALSPAC"))
 rmarkdown::render(input = here("ANALYSIS", "ALSPAC", "ALSPAC_Age_Only.Rmd"), 
                   output_dir = here("OUTPUT", "ALSPAC"), output_format = "all")
 rmarkdown::render(input = here("ANALYSIS", "ALSPAC", "ALSPAC_FI.Rmd"),
