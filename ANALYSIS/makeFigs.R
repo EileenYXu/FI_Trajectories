@@ -27,7 +27,9 @@ leg = ggplot(leg.df) +
                         values = c("High FI" = "#56B4E9", "Low FI" = "#009E73",
                                    "No FI" = "#E69F00")) +
   theme_minimal() + theme(legend.background = element_blank(),
-                          legend.key = element_rect(colour = "transparent"), 
+                          legend.text = element_text(size = 7),
+                          legend.key = element_rect(colour = "transparent"),
+                          legend.key.size = unit(5, units = "mm"),
                           legend.key.spacing.y = unit(4, units = "pt"), 
                           legend.title = element_blank())
 
@@ -64,7 +66,7 @@ plotlist = list(alspac.plots, gus.plots) |> unlist(recursive = FALSE)
 plotlist = plotlist |> 
   map(\(x) x + scale_x_continuous(limits = c(4, 18),
                                   breaks = c(4,6,8,10,12,14,16,18)) +
-        theme(legend.position = "none") + labs(y=NULL, x = NULL))
+        theme(legend.position = "none") + labs(y=NULL, x = "Age (years)"))
 
 # make y axes consistent between ALSPAC and GUS
 # conduct
@@ -96,10 +98,10 @@ ggsave(plot = as_ggplot(legend),
        height = 25, width = 20, units = "mm")
 
 ## Assemble into 2 rows, 4 columns ----
-ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, 
-                  guides = "collect", axes = "collect") + 
+ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, axis_titles = "collect",
+                  guides = "collect") + 
   plot_annotation(tag_levels = "A") & 
-  theme(legend.position = "none") &
+  theme(legend.position = "none", plot.tag = element_text(size = 7)) &
   ylab(NULL) 
 
 ptch
@@ -112,24 +114,24 @@ ggsave(plot = ptch,
 
 ## specify layout 
 layout = "
-AAAAAAA#
-AAAAAAAB
-AAAAAAAB
-AAAAAAAB
-AAAAAAAB
-AAAAAAA#"
+AAAAAAAAA#
+AAAAAAAAA#
+AAAAAAAAAB
+AAAAAAAAAB
+AAAAAAAAA#
+AAAAAAAAA#"
 
 ## assemble patchwork
 nolabs = wrap_elements(ptch) + legend + 
   plot_layout(design = layout) & 
-  theme(plot.margin = margin(0,0,0,0,"pt"))
+  theme(plot.margin = margin(1,1,1,1,"pt"))
 nolabs
 
 par("din")
 
 ggsave(plot = nolabs, 
        filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.pdf"),
-       height = 5, width = 11, units = "in")
+       height = 70, width = 160, units = "mm")
 #ggsave(plot = nolabs, 
 #       filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.png"), 
 #       height = 5, width = 11, units = "in")
@@ -137,37 +139,40 @@ ggsave(plot = nolabs,
 ## Try adding labels ----
 ## make text labels for rows (study) and columns (SDQ)
 
-r1 = text_grob("ALSPAC", rot = 90, size = 10)
-r2 = text_grob("GUS", rot = 90, size = 10)
-c1 = text_grob("Conduct Problems", size = 10)
-c2 = text_grob("Emotional Problems", size = 10)
-c3 = text_grob("Hyperactivity", size = 10)
-c4 = text_grob("Peer Problems", size = 10)
+r1 = text_grob("ALSPAC", rot = 90, size = 7)
+r2 = text_grob("GUS", rot = 90, size = 7)
+c1 = text_grob("Conduct Problems", size = 7)
+c2 = text_grob("Emotional Problems", size = 7)
+c3 = text_grob("Hyperactivity", size = 7)
+c4 = text_grob("Peer Problems", size = 7)
 
 ## specify layout
 arr = c(
-  area(2,2,3,5),
-  area(2,1,2,1),
-  area(3,1,3,1),
-  area(1,2,1,2),
-  area(1,3,1,3),
-  area(1,4,1,4),
-  area(1,5,1,5),
-  area(2,6,3,6)
+  # Plots
+  area(t=2, l=2, b=5, r=5),
+  # SDQ subscales
+  area(t=1, l=2, b=1, r=2),
+  area(t=1, l=3, b=1, r=3),
+  area(t=1, l=4, b=1, r=4),
+  area(t=1, l=5, b=1, r=5),
+  # Cohort labels
+  area(t=2, l=1, b=3, r=1),
+  area(t=4, l=1, b=5, r=1),
+  # Legend
+  area(t=3, l=6, b=4, r=6)
 )
 
 plot(arr)
 
-fig = wrap_elements(full=ptch) + 
-  r1 + r2 + c1 + c2 + c3 + c4 + legend + 
-  plot_layout(design = arr, ncol = 6, nrow = 3, 
-              heights = c(0.1,1,1),
-              widths = c(0.1,1,1,1,1,0.6)) & 
-  theme(plot.margin = margin(0,0,0,0,"pt"))
+fig = wrap_elements(full = ptch) + c1 + c2 + c3 + c4 + r1 + r2 + legend +
+  plot_layout(design = arr, axis_titles = "collect", 
+                       heights = c(0.1, 1, 1, 1, 1, 1), 
+                       widths = c(0.1, 1, 1, 1, 1, 0.5)) &
+  theme(margins = margin(2,2,0,1))
 fig
 
 ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.pdf"), 
-       height = 6, width = 12, units = "in")
+       height = 90, width = 180, units = "mm")
 #ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.png"), 
 #       height = 6, width = 12, units = "in")
 
