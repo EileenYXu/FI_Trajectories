@@ -19,7 +19,7 @@ pal <- c("#E69F00","#009E73","#56B4E9",
 options(ggplot2.discrete.colour=pal, ggplot2.discrete.fill=pal)
 
 # change other features of theme_bw
-my_theme <- function(base_size = 12, base_family = ""){
+my_theme <- function(base_size = 7, base_family = "sans"){
   theme_bw(base_size = base_size, base_family = base_family) %+replace%
     theme(
       panel.background = element_rect(fill = "transparent"),

@@ -179,7 +179,7 @@ traj_plot <- function(pred.df, colour=NULL) {
     ggplot() + 
       geom_line(data = pred.df,
                 aes(x = age_vals, y = emmean),
-                linewidth = 1.5, na.rm = T, colour = "#0072B2") + 
+                linewidth = 1, na.rm = T, colour = "#0072B2") + 
       geom_ribbon(data = pred.df,
                   aes(x = age_vals, y = emmean,
                       ymin = lower.CL, ymax = upper.CL),
@@ -188,7 +188,7 @@ traj_plot <- function(pred.df, colour=NULL) {
     ggplot() + 
       geom_line(data = pred.df,
                 aes(x = age_vals, y = emmean, colour = !!sym(colour)),
-                linewidth = 1.5, na.rm = T) + 
+                linewidth = 1, na.rm = T) + 
       geom_ribbon(data = pred.df,
                   aes(x = age_vals, y = emmean, fill = !!sym(colour),
                       ymin = lower.CL, ymax = upper.CL),
