@@ -21,6 +21,14 @@ source(here("FUNS", "plot.R"))
 ```{r read data}
 dat = readRDS(here("DATA", "GUS_long.rds"))
 
+# remove ordering of factors
+dat = dat |> mutate(
+  MeFaff3lvl = factor(MeFaff3lvl, ordered = FALSE) |> relevel(ref = "Not at all"),
+  DeEqv5 = factor(DeEqv5, ordered = FALSE) |> relevel(ref = "Highest"),
+  ALeSNim2 = factor(ALeSNim2, ordered = FALSE) |> relevel(ref = "1")
+)
+
+
 ## setup for emmeans (emm_at)
 #list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
 emm_at = c(make_emm_at(age_y = dat$Age, agevar = "age.cent"), DeEqv5 = levels(dat$DeEqv5), sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2)) 

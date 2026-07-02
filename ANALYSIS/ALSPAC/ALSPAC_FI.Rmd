@@ -38,7 +38,9 @@ source(here("FUNS", "plot.R"))
 ```{r read data}
 dat = readRDS(here("DATA", "ALSPAC_long.rds"))
 
-# setting reference levels
+# setting reference levels and removing ordering of factors
+dat$foodDiff3 = factor(dat$foodDiff3, ordered = FALSE) |> 
+  relevel(ref = "Not difficult")
 dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") # highest income as ref
 dat$IMD = factor(dat$IMD, ordered=FALSE) |> relevel(ref = "1") #least deprived as ref
 
