@@ -1,10 +1,6 @@
 ---
 title: "ALSPAC Food Insecurity and SDQ trajectories"
-output:
-  html_document:
-    toc: true
-    toc_depth: 2
-    code_folding: hide
+output: html_document
 ---
 
 Fitting models of SDQ trajectories with food insecurity at age 5 as a 3-level factor. The polynomial terms included here may need to be edited depending on what best fits the data.\
@@ -39,10 +35,13 @@ source(here("FUNS", "plot.R"))
 dat = readRDS(here("DATA", "ALSPAC_long.rds"))
 
 # setting reference levels and removing ordering of factors
-dat$foodDiff3 = factor(dat$foodDiff3, ordered = FALSE) |> 
-  relevel(ref = "Not difficult")
-dat$income = factor(dat$income, ordered = FALSE) |> relevel(ref = ">400") # highest income as ref
-dat$IMD = factor(dat$IMD, ordered=FALSE) |> relevel(ref = "1") #least deprived as ref
+dat = dat |> mutate(
+  foodDiff3 = factor(foodDiff3, ordered = F) |> relevel(ref = "Not difficult"),
+  # highest income as ref
+  income = factor(income, ordered = FALSE) |> relevel(ref = ">400"),
+  #least deprived as ref
+  IMD = factor(dat$IMD, ordered=FALSE) |> relevel(ref = "1")
+)
 
 ## setup for emmeans (emm_at)
 # list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
@@ -325,14 +324,15 @@ emm.list = contrmods |>
 
 # set contrast grid so that it's always more FI vs less FI
 contrast_alspac = list(
-  "Slightly - Not difficult" = c(-1, 0, 1),
-  "(Fairly/Very) - Not difficult" = c(-1, 1, 0),
-  "(Fairly/Very) - Slightly" = c(0, 1, -1)
+  "Slightly - Not difficult" = c(-1, 1, 0),
+  "(Fairly/Very) - Not difficult" = c(-1, 0, 1),
+  "(Fairly/Very) - Slightly" = c(0, -1, 1)
 )
 
 # run the contrasts bit
 results.contr = emm.list |> 
-  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", age_m = mean(dat$Age, na.rm = T),
+  map(\(x) mod_contrasts(emm = x, simple = "foodDiff3", 
+                         age_m = mean(dat$Age, na.rm = T),
                          method = contrast_alspac, adjust = "fdr"))
 
 openxlsx::write.xlsx(results.contr, here("OUTPUT/ALSPAC", "FI_Contrasts.xlsx"))

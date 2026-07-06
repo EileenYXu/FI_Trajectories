@@ -310,9 +310,9 @@ emm.list = contrmods |>
 
 # set contrast grid so that it's always more FI vs less FI
 contrast_gus = list(
-  "(A little) - Not at all" = c(-1, 0, 1),
-  "(A lot/fair amount) - Not at all" = c(-1, 1, 0),
-  "(A lot/fair amount) - A little" = c(0, 1, -1)
+  "(A little) - Not at all" = c(-1, 1, 0),
+  "(A lot/fair amount) - Not at all" = c(-1, 0, 1),
+  "(A lot/fair amount) - A little" = c(0, -1, 1)
 )
 
 # run the contrasts bit
