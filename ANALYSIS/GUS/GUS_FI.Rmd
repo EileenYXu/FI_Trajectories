@@ -21,6 +21,14 @@ source(here("FUNS", "plot.R"))
 ```{r read data}
 dat = readRDS(here("DATA", "GUS_long.rds"))
 
+# remove ordering of factors
+dat = dat |> mutate(
+  MeFaff3lvl = factor(MeFaff3lvl, ordered = FALSE) |> relevel(ref = "Not at all"),
+  DeEqv5 = factor(DeEqv5, ordered = FALSE) |> relevel(ref = "Highest"),
+  ALeSNim2 = factor(ALeSNim2, ordered = FALSE) |> relevel(ref = "1")
+)
+
+
 ## setup for emmeans (emm_at)
 #list of all categorical predictor levels to estimate. Maternal MH not included here as it's continuous and has a meaningful mean value so we can just get estimates for mean maternal MH score
 emm_at = c(make_emm_at(age_y = dat$Age, agevar = "age.cent"), DeEqv5 = levels(dat$DeEqv5), sex = levels(dat$Sex), ALeSNim2 = levels(dat$ALeSNim2)) 
@@ -222,7 +230,7 @@ print(peerfits[[1]]$diagnostics)
 p.preds = get_preds(dat = dat, obj = peerfits[[1]], age_y = "Age", 
                     emm_at = emm_at, specs = c("age.cent", "MeFaff3lvl"))
 
-plot.unadjusted[["peer"]] = traj_plot(c.preds, colour = "MeFaff3lvl") + 
+plot.unadjusted[["peer"]] = traj_plot(p.preds, colour = "MeFaff3lvl") + 
   scale_x_continuous(breaks = seq(6, 18, 3)) + ylab("SDQ Peer") +
   xlab("Age (years)")
 
@@ -302,9 +310,9 @@ emm.list = contrmods |>
 
 # set contrast grid so that it's always more FI vs less FI
 contrast_gus = list(
-  "(A little) - Not at all" = c(-1, 0, 1),
-  "(A lot/fair amount) - Not at all" = c(-1, 1, 0),
-  "(A lot/fair amount) - A little" = c(0, 1, -1)
+  "(A little) - Not at all" = c(-1, 1, 0),
+  "(A lot/fair amount) - Not at all" = c(-1, 0, 1),
+  "(A lot/fair amount) - A little" = c(0, -1, 1)
 )
 
 # run the contrasts bit

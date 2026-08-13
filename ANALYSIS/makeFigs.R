@@ -14,20 +14,23 @@ leg.df = data.frame(
   x = rnorm(9),
   y = rnorm(9),
   FI = rep(c("No FI", "Low FI", "High FI"), times = 3)
-) |> mutate(low = y-1, hi = y+1)
+) |> mutate(low = y-1, hi = y+1, 
+            FI = factor(FI, levels = c("No FI", "Low FI", "High FI"),
+                        ordered=TRUE))
 
 # plot dummy df
 leg = ggplot(leg.df) +
-  geom_line(aes(x, y, colour = FI), linewidth = 1.5) +
+  geom_line(aes(x, y, colour = FI), linewidth = 1) +
   geom_ribbon(aes(x = x, y = y, ymin = low, ymax = hi, fill = FI), 
               alpha = 0.2) +
   scale_discrete_manual(aesthetics = c("colour", "fill"), 
                         values = c("High FI" = "#56B4E9", "Low FI" = "#009E73",
                                    "No FI" = "#E69F00")) +
   theme_minimal() + theme(legend.background = element_blank(),
-                          legend.key = element_rect(colour = "transparent"), 
-                          legend.text = element_text(size = 12), 
-                          legend.key.spacing.y = unit(10, units = "pt"), 
+                          legend.text = element_text(size = 7),
+                          legend.key = element_rect(colour = "transparent"),
+                          legend.key.size = unit(5, units = "mm"),
+                          legend.key.spacing.y = unit(4, units = "pt"), 
                           legend.title = element_blank())
 
 leg
@@ -42,6 +45,7 @@ as_ggplot(legend)
 load(file = here("OUTPUT/ALSPAC", "ALSPAC_plotdat_adjusted.rda"))
 alspac = list(conduct = c.adj, emot = e.adj, hyper = h.adj, peer = p.adj)
 rm(c.adj, e.adj, h.adj, p.adj)
+
 load(file = here("OUTPUT/GUS", "GUS_plotdat_adjusted.rda"))
 gus = list(conduct = c.adj, emot = e.adj, hyper = h.adj, peer = p.adj)
 rm(c.adj, e.adj, h.adj, p.adj)
@@ -59,8 +63,10 @@ names(gus.plots) = names(gus.plots) |>
 
 # make x axes limits consistent for all plots
 plotlist = list(alspac.plots, gus.plots) |> unlist(recursive = FALSE)
-plotlist = plotlist |> map(\(x) x + scale_x_continuous(
-  breaks = c(4,6,8,10,12,14,16,18)))
+plotlist = plotlist |> 
+  map(\(x) x + scale_x_continuous(limits = c(4, 18),
+                                  breaks = c(4,6,8,10,12,14,16,18)) +
+        theme(legend.position = "none") + labs(y=NULL, x = "Age (years)"))
 
 # make y axes consistent between ALSPAC and GUS
 # conduct
@@ -80,79 +86,95 @@ plotlist[c(4,8)] = plotlist[c(4,8)] |>
   map(\(x) x + scale_y_continuous(
     limits = c(0.7, 2.6), breaks = c(0.5, 1, 1.5, 2, 2.5)))
 
+## Save individual plots and figure legend as .pdf ----
+
+plotlist |> 
+  imap(\(plt, idx) 
+       ggsave(plot = plt,
+              filename = here("OUTPUT/FIGS", paste0(idx, "_adjusted.pdf")),
+              height = 40, width = 40, units = "mm"))
+ggsave(plot = as_ggplot(legend),
+       filename = here("OUTPUT/FIGS", "FI_legend.pdf"),
+       height = 25, width = 20, units = "mm")
+
 ## Assemble into 2 rows, 4 columns ----
-ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, 
-                  guides = "collect", axes = "collect") + 
+ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, axis_titles = "collect",
+                  guides = "collect") + 
   plot_annotation(tag_levels = "A") & 
-  theme(legend.position = "none", plot.margin = margin(10,10,10,10,"pt")) &
+  theme(legend.position = "none", plot.tag = element_text(size = 7)) &
   ylab(NULL) 
 
 ptch
+
+ggsave(plot = ptch, 
+       filename = here("OUTPUT/FIGS", "Traj_Adjusted_noleg.pdf"),
+       height = 80, width = 160, units = "mm")
 
 ## Add figure legend ----
 
 ## specify layout 
 layout = "
-AAAAAAA#
-AAAAAAAB
-AAAAAAAB
-AAAAAAAB
-AAAAAAAB
-AAAAAAA#"
+AAAAAAAAA#
+AAAAAAAAA#
+AAAAAAAAAB
+AAAAAAAAAB
+AAAAAAAAA#
+AAAAAAAAA#"
 
 ## assemble patchwork
 nolabs = wrap_elements(ptch) + legend + 
   plot_layout(design = layout) & 
-  theme(plot.margin = margin(0,0,0,0,"pt"))
+  theme(plot.margin = margin(1,1,1,1,"pt"))
 nolabs
 
 par("din")
 
 ggsave(plot = nolabs, 
-       filename = here("OUTPUT", "Traj_Adjusted_nolabs.svg"),
-       height = 5, width = 11, units = "in")
-ggsave(plot = nolabs, 
-       filename = here("OUTPUT", "Traj_Adjusted_nolabs.png"), 
-       height = 5, width = 11, units = "in")
-
+       filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.pdf"),
+       height = 70, width = 160, units = "mm")
+#ggsave(plot = nolabs, 
+#       filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.png"), 
+#       height = 5, width = 11, units = "in")
 
 ## Try adding labels ----
 ## make text labels for rows (study) and columns (SDQ)
 
-r1 = text_grob("ALSPAC", rot = 90, size = 14)
-r2 = text_grob("GUS", rot = 90, size = 14)
-c1 = text_grob("Conduct Problems", size = 14)
-c2 = text_grob("Emotional Problems", size = 14)
-c3 = text_grob("Hyperactivity", size = 14)
-c4 = text_grob("Peer Problems", size = 14)
+r1 = text_grob("ALSPAC", rot = 90, size = 7)
+r2 = text_grob("GUS", rot = 90, size = 7)
+c1 = text_grob("Conduct Problems", size = 7)
+c2 = text_grob("Emotional Problems", size = 7)
+c3 = text_grob("Hyperactivity", size = 7)
+c4 = text_grob("Peer Problems", size = 7)
 
 ## specify layout
 arr = c(
-  area(2,2,3,5),
-  area(2,1,2,1),
-  area(3,1,3,1),
-  area(1,2,1,2),
-  area(1,3,1,3),
-  area(1,4,1,4),
-  area(1,5,1,5),
-  area(2,6,3,6)
+  # Plots
+  area(t=2, l=2, b=5, r=5),
+  # SDQ subscales
+  area(t=1, l=2, b=1, r=2),
+  area(t=1, l=3, b=1, r=3),
+  area(t=1, l=4, b=1, r=4),
+  area(t=1, l=5, b=1, r=5),
+  # Cohort labels
+  area(t=2, l=1, b=3, r=1),
+  area(t=4, l=1, b=5, r=1),
+  # Legend
+  area(t=3, l=6, b=4, r=6)
 )
 
 plot(arr)
 
-fig = wrap_elements(full=ptch) + 
-  r1 + r2 + c1 + c2 + c3 + c4 + legend + 
-  plot_layout(design = arr, ncol = 6, nrow = 3, 
-              heights = c(0.1,1,1),
-              widths = c(0.1,1,1,1,1,0.5)) & 
-  theme(plot.margin = margin(0,0,0,0,"pt"), 
-        legend.margin = margin(0,0,0,0,"pt"))
+fig = wrap_elements(full = ptch) + c1 + c2 + c3 + c4 + r1 + r2 + legend +
+  plot_layout(design = arr, axis_titles = "collect", 
+                       heights = c(0.1, 1, 1, 1, 1, 1), 
+                       widths = c(0.1, 1, 1, 1, 1, 0.5)) &
+  theme(margins = margin(2,2,0,1))
 fig
 
-ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.svg"), 
-       height = 6, width = 12, units = "in")
-ggsave(plot = fig, filename = here("OUTPUT", "Traj_Adjusted_labs.png"), 
-       height = 6, width = 12, units = "in")
+ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.pdf"), 
+       height = 90, width = 180, units = "mm")
+#ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.png"), 
+#       height = 6, width = 12, units = "in")
 
 
 # Supplementary figures ----
@@ -172,8 +194,8 @@ gus.age
 gus.plot = wrap_plots(gus.age, axes = "collect") + 
   plot_annotation(tag_levels = "A")
 gus.plot
-ggsave(plot = gus.plot, filename = here("OUTPUT", "GUS_AgeOnly.png"), 
-       height = 5, width = 6, units = "in")
+ggsave(plot = gus.plot, filename = here("OUTPUT/FIGS", "GUS_AgeOnly.pdf"), 
+       height = 80, width = 90, units = "mm")
 
 ## ALSPAC age only trajectories ----
 
@@ -189,8 +211,8 @@ alspac.age
 
 alspac.plot = wrap_plots(alspac.age, axes = "collect") + 
   plot_annotation(tag_levels = "A")
-ggsave(plot = alspac.plot, filename = here("OUTPUT", "ALSPAC_AgeOnly.png"),
-       height = 5, width = 6, units = "in")
+ggsave(plot = alspac.plot, filename = here("OUTPUT/FIGS", "ALSPAC_AgeOnly.pdf"),
+       height = 80, width = 90, units = "mm")
 
 ## GUS unadjusted trajectories by FI ----
 
@@ -209,18 +231,8 @@ gus.age
 gus.plot = wrap_plots(gus.age, axes = "collect") + 
   plot_annotation(tag_levels = "A") & theme(legend.position = "none")
 
-# add legend
-layout = "
-AAAA#
-AAAAB
-AAAA#"
-
-gus.unadj = wrap_elements(gus.plot) + legend + plot_layout(design = layout) &
-  theme(plot.margin = margin(0,0,0,0,"pt"), text = element_text(size = 12))
-gus.unadj
-
-ggsave(plot = gus.unadj, filename = here("OUTPUT", "GUS_Unadjusted.png"),
-       height = 5, width = 7.5, units = "in")
+ggsave(plot = gus.plot, filename = here("OUTPUT/FIGS", "GUS_Unadjusted.pdf"),
+       height = 80, width = 90, units = "mm")
 
 ## ALSPAC unadjusted trajectories by FI ----
 
@@ -238,16 +250,5 @@ alspac.age
 alspac.plot = wrap_plots(alspac.age, axes = "collect") + 
   plot_annotation(tag_levels = "A") & theme(legend.position = "none")
 
-# add legend
-layout = "
-AAAA#
-AAAAB
-AAAA#"
-
-alspac.unadj = wrap_elements(alspac.plot) + legend + 
-  plot_layout(design = layout) & 
-  theme(plot.margin = margin(0,0,0,0,"pt"), text = element_text(size = 12))
-alspac.unadj
-
-ggsave(plot = alspac.unadj, filename = here("OUTPUT", "ALSPAC_Unadjusted.png"),
-       height = 5, width = 7.5, units = "in")
+ggsave(plot = alspac.plot, filename = here("OUTPUT/FIGS", "ALSPAC_Unadjusted.pdf"),
+       height = 80, width = 90, units = "mm")

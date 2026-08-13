@@ -1,7 +1,7 @@
-#### Demographics of included and excluded ppts in ALSPAC and GUS ####
+#### Compare demographics of included and excluded ppts in ALSPAC and GUS ####
 
 library(here)
-i_am("ANALYSIS/desc_missingdata.R")
+i_am("ANALYSIS/descMissing.R")
 source(here("FUNS", "packages.R"))
 source(here("FUNS", "prep.R"))
 
@@ -16,11 +16,12 @@ alspac_inc = readRDS(here("DATA","ALSPAC_long.rds"))
 
 ## Code included/excluded ----
 included = unique(alspac_inc$ID)
-length(included) #8078 participants included
+length(included) #5737 participants included
 rm(alspac_inc)
 
-alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> as.factor()
-summary(alspac_wide$included) #7567 excluded
+alspac_wide$included = ifelse(alspac_wide$ID %in% included, 1, 0) |> 
+  as.factor()
+summary(alspac_wide$included) #9908 excluded
 
 ## Code attendance at each sweep ----
 # age at sweep used as proxy for attendance
@@ -34,25 +35,27 @@ attend = make_misscols(df=attend, var_cols = agecols, new_names = new_names) |>
 alspac_wide = merge(alspac_wide, attend, by = "ID")
 
 ## Rename age columns to be timepoint_age and convert to years ----
-alspac_wide = rename_with(.data = alspac_wide, .cols = all_of(agecols), 
-                          ~gsub(pattern = "\\d{3,}a", replacement = "_age", .x)) |> 
+alspac_wide = rename_with(
+  .data = alspac_wide, .cols = all_of(agecols), 
+  ~gsub(pattern = "\\d{3,}a", replacement = "_age", .x)) |> 
   mutate(across(.cols = ends_with("_age"), ~ .x/12))
 
 ## Filter demographic vars and code as factors ----
-sumvars = c("sex", "income", "foodDiff", "IMD", "matAge", "matEd",
-            "matClass", "parity", "housing", "finDiff", "smokePreg", "epdsPre",
-            "epdsPost", "ethnicity", "epds", "foodDiff3", 
-            grepv(pattern = "_age", x = names(alspac_wide)),
+catvars = c("sex", "housing", "parity", "smokePreg", "matEd", "matClass",
+            "ethnicity", "finDiff", "foodDiff", "foodDiff3", "income", "IMD")
+numvars = c("matAge", "epdsPre", "epdsPost", "epds")
+sumvars = c(catvars, numvars, grepv(pattern = "_age", x = names(alspac_wide)),
             grepv(pattern = "in_", x = names(alspac_wide)))
 
 ## Recode 4-level FI to 3-level
 alspac_wide = alspac_wide |> 
-  select(included, any_of(sumvars)) |> 
-  mutate(foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
-                               foodDiff == "Slightly" ~ "Slightly",
-                               foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
-           fct_relevel("Not difficult"))
-
+  select(included, any_of(sumvars)) |> mutate(
+    foodDiff3 = case_when(foodDiff == "Not difficult" ~ "Not difficult",
+                          foodDiff == "Slightly" ~ "Slightly",
+                          foodDiff %in% c("Fairly", "Very") ~ "Fairly/Very") |>
+      fct_relevel("Not difficult"))
+alspac_wide = alspac_wide |> mutate(across(all_of(catvars), as.factor),
+                                    across(all_of(numvars), as.numeric))
 ## Get ALSPAC demogs ----
 
 indat = alspac_wide |> filter(included=="1")
@@ -63,7 +66,36 @@ exdat = alspac_wide |> filter(included=="0")
 alspac_ex = get_sum_stats(dat = exdat, vars = sumvars) |> 
   filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
 
-rm(indat, exdat, alspac_wide)
+## Differences between included and excluded participants ----
+
+# categorical vars
+catvars = list("sex", "housing", "parity", "smokePreg", "matEd", "matClass",
+  "ethnicity", "finDiff", "foodDiff", "foodDiff3", "income", "IMD")
+catdiffs = catvars |> map(\(x) chisq.test(x = alspac_wide[["included"]],
+                                          y = alspac_wide[[x]])) |> 
+  set_names(catvars)
+
+catdiffs |> map(\(chisq) any(chisq[["expected"]] < 5)) # no expected counts < 5
+difftab = catdiffs |> imap(\(x, idx) c("var" = idx, 
+                             "statistic" = x[["statistic"]][["X-squared"]],
+                             "df" = x[["parameter"]][["df"]],
+                             "n_valid" = sum(x[["observed"]]),
+                             "p" = x[["p.value"]])) |> 
+  reduce(rbind) |> as.data.frame()
+
+numvars = list("matAge", "epdsPre", "epdsPost", "epds")
+numdiffs = numvars |> 
+  map(\(x) t.test(formula = alspac_wide[[x]] ~ alspac_wide[["included"]],
+                  var.equal = FALSE)) |> set_names(numvars)
+addtab = numdiffs |> 
+  imap(\(x, idx) c("var" = idx, "statistic" = x[["statistic"]][["t"]],
+  "df" = x[["parameter"]][["df"]], "n_valid" = sum(!is.na(alspac_wide[[idx]])),
+  "p" = x[["p.value"]])) |> reduce(rbind) |> as.data.frame()
+
+alspac_diffs = rbind(difftab, addtab)
+
+rm(addtab, alspac_wide, attend, catdiffs, difftab, exdat, indat, numdiffs,
+   numvars, agecols, catvars, included, new_names, sumvars)
 
 # GUS ----
 
@@ -72,7 +104,7 @@ vars = c("Idnumber", "DaHGmag5", "DaZten02", "DaHGbord", "MaHcig01",
          "DaMedu03", "DaMsec01", "DaEthGpC")
 
 sw1 = read.delim(
-  "G://data/GUS/5760-GUS-Cohort1/tab/gus_cohort1_sw1_b_v4_protect.tab") |> 
+  "DATA/GUS/gus_cohort1_sw1_b_v4_protect.tab") |> 
   select(all_of(vars))
 
 # recode factors and levels to meaningful names
@@ -121,10 +153,10 @@ gus_inc = readRDS(here("DATA","GUS_long.rds"))
 
 # get unique IDs for included participants and make column of included/excluded
 included = unique(gus_inc$Idnumber)
-length(included) #3167 participants included
+length(included) #3402 participants included
 
 gus_wide$included = ifelse(gus_wide$Idnumber %in% included, 1, 0) |> as.factor()
-summary(gus_wide$included) #666 excluded
+summary(gus_wide$included) #431 excluded
 
 ## Attendance at each sweep ----
 var_cols = grepv(pattern = "HGagC", names(gus_wide))
@@ -159,7 +191,37 @@ exdat = gus_wide |> filter(included=="0")
 gus_ex = get_sum_stats(dat = exdat, vars = sumvars) |> 
   filter(!str_detect(pattern = "^[in]{2}\\_[:alpha:]{2}\\_[0]{1}", Var))
 
-descs = list("ALSPAC_included" = alspac_in, "ALSPAC_excluded" = alspac_ex,
-             "GUS_included" = gus_in, "GUS_excluded" = gus_ex)
+## Differences between included and excluded participants ----
 
-openxlsx::write.xlsx(descs, here("OUTPUT/", "Descriptives.xlsx"))
+# categorical vars
+catvars = list("Sex", "tenure", "birthorder", "smokepreg", "MatEdu",
+               "delivery_age", "occupation", "ethnicity", "MeFaff04",
+               "MeFaff3lvl", "EqvIncome", "ALeSNim2")
+catdiffs = catvars |> map(\(x) chisq.test(x = gus_wide[["included"]],
+                                          y = gus_wide[[x]])) |> 
+  set_names(catvars)
+
+catdiffs |> map(\(chisq) any(chisq[["expected"]] < 5)) # no expected counts < 5
+difftab = catdiffs |> 
+  imap(\(x, idx) c("var" = idx,
+                   "statistic" = x[["statistic"]][["X-squared"]],
+                   "df" = x[["parameter"]][["df"]],
+                   "n_valid" = sum(x[["observed"]]),
+                   "p" = x[["p.value"]])) |> 
+  reduce(rbind) |> as.data.frame()
+
+numdiff = t.test(formula = gus_wide[["DeSf12mn"]] ~ gus_wide[["included"]],
+                  var.equal = FALSE)
+addtab = c("var" = "SF-12 MCS", "statistic" = numdiff[["statistic"]][["t"]],
+           "df" = numdiff[["parameter"]][["df"]], 
+           "n_valid" = sum(!is.na(gus_wide[["DeSf12mn"]])),
+           "p" = numdiff[["p.value"]])
+
+gus_diffs = rbind(difftab, addtab)
+
+# Save ----
+descs = list("ALSPAC_included" = alspac_in, "ALSPAC_excluded" = alspac_ex,
+             "GUS_included" = gus_in, "GUS_excluded" = gus_ex,
+             "ALSPAC_diffs" = alspac_diffs, "GUS_diffs" = gus_diffs)
+
+openxlsx::write.xlsx(descs, here("OUTPUT/", "Descriptives_revised.xlsx"))

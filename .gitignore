@@ -8,3 +8,6 @@ DATA/*
 archived/*
 *.svg
 *.rda
+*.dta
+*.pdf
+*.png

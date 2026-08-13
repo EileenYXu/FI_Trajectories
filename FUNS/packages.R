@@ -12,18 +12,18 @@ emm_options(lmerTest.limit = 40000, pbkrtest.limit = 40000)
 # ggplot theme ----
 
 # use Okabe-Ito (2008) colourblind-friendly palette by default
-pal <- c("#E69F00","#56B4E9","#009E73",
+pal <- c("#E69F00","#009E73","#56B4E9",
          "#F5C710","#0072B2","#D55E00",
          "#CC79A7","#999999","#000000")
 
 options(ggplot2.discrete.colour=pal, ggplot2.discrete.fill=pal)
 
 # change other features of theme_bw
-my_theme <- function(base_size = 12, base_family = ""){
+my_theme <- function(base_size = 7, base_family = "sans"){
   theme_bw(base_size = base_size, base_family = base_family) %+replace%
     theme(
       panel.background = element_rect(fill = "transparent"),
-      plot.background = element_rect(fill = "transparent", color = NA),
+      plot.background = element_rect(fill = "transparent", colour = alpha(colour = "black", alpha = 0)),
       panel.grid.major = element_line(colour = "grey88"),
       panel.grid.minor = element_line(colour = "grey99"),
       legend.background = element_rect(fill = "transparent"),

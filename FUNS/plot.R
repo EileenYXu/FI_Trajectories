@@ -78,7 +78,7 @@ make_emm_at <- function(dat=NULL, age_y, agevar) {
     age_y <- dat[[age_y]]  
   }
   
-  age_vals <-  seq(min(age_y), max(age_y), 0.5) 
+  age_vals <-  seq(min(age_y, na.rm = T), max(age_y, na.rm = T), 0.5) 
   
   #mean center to fit with the model
   age_cent <-  age_vals - mean(age_y, na.rm = T) 
@@ -179,7 +179,7 @@ traj_plot <- function(pred.df, colour=NULL) {
     ggplot() + 
       geom_line(data = pred.df,
                 aes(x = age_vals, y = emmean),
-                linewidth = 1.5, na.rm = T, colour = "#0072B2") + 
+                linewidth = 1, na.rm = T, colour = "#0072B2") + 
       geom_ribbon(data = pred.df,
                   aes(x = age_vals, y = emmean,
                       ymin = lower.CL, ymax = upper.CL),
@@ -188,7 +188,7 @@ traj_plot <- function(pred.df, colour=NULL) {
     ggplot() + 
       geom_line(data = pred.df,
                 aes(x = age_vals, y = emmean, colour = !!sym(colour)),
-                linewidth = 1.5, na.rm = T) + 
+                linewidth = 1, na.rm = T) + 
       geom_ribbon(data = pred.df,
                   aes(x = age_vals, y = emmean, fill = !!sym(colour),
                       ymin = lower.CL, ymax = upper.CL),
