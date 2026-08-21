@@ -1,0 +1,84 @@
+---
+title: "ALSPAC exploratory/sensitivity analysis"
+output: html_document
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, results = "asis")
+library(here)
+i_am("ANALYSIS/ALSPAC/ALSPAC_sens.Rmd")
+source(here("FUNS", "packages.R"))
+```
+
+Reviewer asked about longitudinal FI measures in ALSPAC. Maternal difficulties affording food were available at age ~5 (used for trajectories), 7 and 11. 
+
+```{r make-age11, eval = FALSE}
+# read in extra FI timepoints, recode and save.
+library(haven)
+
+dat = readRDS(here("DATA", "ALSPAC_long.rds"))
+
+vars = c("cidB3421", "qlet", "k6200", "m5170", "r9000")
+FIwide = read_dta("ALSPAC.dta", col_select = all_of(vars)) 
+
+FIwide = FIwide |> 
+  mutate(ID = str_c(cidB3421, qlet, sep = "_"),
+         FIage5 = as_factor(k6200),
+         FIage7 = as_factor(m5170),
+         FIage11 = as_factor(r9000)) |> droplevels() |> 
+  filter(ID %in% dat$ID) |> select(-any_of(vars)) |> zap_label()
+
+FIwide |> select(FIage5:FIage11) |> map(levels)
+
+allFI = FIwide |> mutate(across(
+  FIage5:FIage11, 
+  ~factor(.x, exclude = c("Not completed", "No response", "Don't pay for this", 
+                          "Do not pay for this")))) |> 
+  droplevels()
+
+summary(allFI)
+
+saveRDS(allFI, here("DATA", "ALSPAC_FI_timepoints.rds"))
+#allFI = readRDS(here("DATA", "ALSPAC_FI_timepoints.rds"))
+rm(FIwide, dat, vars)
+```
+
+
+```{r}
+## reviewer wanted to know how many in each group increased, decreased or stayed at the same FI level
+
+FI3lvl = allFI[complete.cases(allFI),] |> mutate(
+  OGlevel = case_when(FIage5 == "Very difficult" ~ "High FI",
+                       FIage5 == "Fairly difficult" ~ "High FI",
+                       FIage5 == "Slightly difficult" ~ "Low FI",
+                       FIage5 == "Not difficult" ~ "No FI") |> as.factor(),
+  
+  across(FIage5:FIage11, ~case_when(.x == "Very difficult" ~ 2,
+                                    .x == "Fairly difficult" ~  2,
+                                    .x == "Slightly difficult" ~ 1,
+                                    .x == "Not difficult" ~ 0)),
+  
+  T1vT2 = case_when(FIage5 == FIage7 ~ "No change",
+                    FIage5 > FIage7 ~ "Decreased",
+                    FIage5 < FIage7 ~ "Increased") |> as.factor(),
+  
+  T2vT3 = case_when(FIage7 == FIage11 ~ "No change",
+                    FIage7 > FIage11 ~ "Decreased",
+                    FIage7 < FIage11 ~ "Increased") |> as.factor(),
+  
+  T1vT3 = case_when(FIage5 == FIage11 ~ "No change",
+                    FIage5 > FIage11 ~ "Decreased",
+                    FIage5 < FIage11 ~ "Increased") |> as.factor(),
+  
+  pattern = case_when(T1vT2 == "No change" & T2vT3 == "No change" ~ "Stable",
+                      T1vT2 == "No change" & T2vT3 == "Decreased" ~ ""))
+
+changebygroup = FI3lvl |> group_by(OGlevel) |> count(T1vT2, T2vT3)
+
+summary(FI3lvl$OGlevel)
+
+#High FI  Low FI   No FI 
+    #229     625    3813 
+
+write.csv(changebygroup, here("OUTPUT", "changebygroup.csv"))
+```
