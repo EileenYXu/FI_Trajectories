@@ -55,7 +55,7 @@ conductfits = covars |>
 ## No covariates
 
 ```{r results='asis'}
-sjPlot::tab_model(conductfits[[1]]$fit)
+sj_tab(conductfits[[1]]$fit)
 print(conductfits[[1]]$diagnostics)
 
 c.preds = get_preds(dat = dat, obj = conductfits[[1]], age_y = "Age", 
@@ -71,21 +71,21 @@ plot.unadjusted[["conduct"]]
 ## Covariates sex and income 
 
 ```{r results='asis'}
-sjPlot::tab_model(conductfits[[2]]$fit)
+sj_tab(conductfits[[2]]$fit)
 print(conductfits[[2]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH
 
 ```{r results='asis'}
-sjPlot::tab_model(conductfits[[3]]$fit)
+sj_tab(conductfits[[3]]$fit)
 print(conductfits[[3]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH, SIMD
 
 ```{r results='asis'}
-sjPlot::tab_model(conductfits[[4]]$fit)
+sj_tab(conductfits[[4]]$fit)
 print(conductfits[[4]]$diagnostics)
 
 c.adj = get_preds(dat = dat, obj = conductfits[[4]], age_y = "Age",
@@ -111,7 +111,7 @@ emotfits = covars |>
 ## No covariates 
 
 ```{r results='asis'}
-sjPlot::tab_model(emotfits[[1]]$fit)
+sj_tab(emotfits[[1]]$fit)
 print(emotfits[[1]]$diagnostics)
 
 e.preds = get_preds(dat = dat, obj = emotfits[[1]], age_y = "Age", 
@@ -127,21 +127,21 @@ plot.unadjusted[["emot"]]
 ## Covariates sex and income
 
 ```{r}
-sjPlot::tab_model(emotfits[[2]]$fit)
+sj_tab(emotfits[[2]]$fit)
 print(emotfits[[2]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH
 
 ```{r}
-sjPlot::tab_model(emotfits[[3]]$fit)
+sj_tab(emotfits[[3]]$fit)
 print(emotfits[[3]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH, SIMD
 
 ```{r results='asis'}
-sjPlot::tab_model(emotfits[[4]]$fit)
+sj_tab(emotfits[[4]]$fit)
 print(emotfits[[4]]$diagnostics)
 
 e.adj = get_preds(dat = dat, obj = emotfits[[4]], age_y = "Age",
@@ -168,7 +168,7 @@ hyperfits = covars |>
 ## No covariates 
 
 ```{r results='asis'}
-sjPlot::tab_model(hyperfits[[1]]$fit)
+sj_tab(hyperfits[[1]]$fit)
 print(hyperfits[[1]]$diagnostics)
 
 h.preds = get_preds(dat = dat, obj = hyperfits[[1]], age_y = "Age", 
@@ -184,21 +184,21 @@ plot.unadjusted[["hyper"]]
 ## Covariates sex and income
 
 ```{r}
-sjPlot::tab_model(hyperfits[[2]]$fit)
+sj_tab(hyperfits[[2]]$fit)
 print(hyperfits[[2]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH
 
 ```{r}
-sjPlot::tab_model(hyperfits[[3]]$fit)
+sj_tab(hyperfits[[3]]$fit)
 print(hyperfits[[3]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH, SIMD
 
 ```{r results='asis'}
-sjPlot::tab_model(hyperfits[[4]]$fit)
+sj_tab(hyperfits[[4]]$fit)
 print(hyperfits[[4]]$diagnostics)
 
 h.adj = get_preds(dat = dat, obj = hyperfits[[4]], age_y = "Age",
@@ -224,7 +224,7 @@ peerfits = covars |>
 ## No covariates 
 
 ```{r results='asis'}
-sjPlot::tab_model(peerfits[[1]]$fit)
+sj_tab(peerfits[[1]]$fit)
 print(peerfits[[1]]$diagnostics)
 
 p.preds = get_preds(dat = dat, obj = peerfits[[1]], age_y = "Age", 
@@ -240,21 +240,21 @@ plot.unadjusted[["peer"]]
 ## Covariates sex and income
 
 ```{r}
-sjPlot::tab_model(peerfits[[2]]$fit)
+sj_tab(peerfits[[2]]$fit)
 print(peerfits[[2]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH
 
 ```{r}
-sjPlot::tab_model(peerfits[[3]]$fit)
+sj_tab(peerfits[[3]]$fit)
 print(peerfits[[3]]$diagnostics)
 ```
 
 ## Covariates sex, income, maternal MH, SIMD
 
 ```{r results='asis'}
-sjPlot::tab_model(peerfits[[4]]$fit)
+sj_tab(peerfits[[4]]$fit)
 print(peerfits[[4]]$diagnostics)
 
 p.adj = get_preds(dat = dat, obj = peerfits[[4]], age_y = "Age",

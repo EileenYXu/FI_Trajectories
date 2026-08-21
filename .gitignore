@@ -11,3 +11,4 @@ archived/*
 *.dta
 *.pdf
 *.png
+OUTPUT/*

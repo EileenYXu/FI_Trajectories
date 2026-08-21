@@ -101,3 +101,14 @@ get_ests <- function(fitlist) {
     map(\(x) tidy(x$fit, effects="fixed", conf.int = T, conf.level = 0.95)) |> 
     reduce(rbind) |>  select(-effect)
 }
+
+# sj_tab ----
+
+# wrapper for sjPlot::tab_model() which produces a regression table with 
+# estimates, CIs, test statistics, df and p (using satterthwaite approximation)
+
+sj_tab <- function(fit) {
+  sjPlot::tab_model(fit, show.stat = T, show.df = T, p.val = "satterthwaite", 
+                    col.order = c("est", "ci", "stat", "df.error", "p"),
+                    CSS = list(css.table = '+font-family: Helvetica;'))
+}
