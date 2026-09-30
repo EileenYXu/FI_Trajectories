@@ -100,8 +100,8 @@ ggsave(plot = as_ggplot(legend),
 ## Assemble into 2 rows, 4 columns ----
 ptch = wrap_plots(plotlist, ncol = 4, nrow = 2, axis_titles = "collect",
                   guides = "collect") + 
-  plot_annotation(tag_levels = "A") & 
-  theme(legend.position = "none", plot.tag = element_text(size = 7)) &
+  plot_annotation(tag_levels = "a") & 
+  theme(legend.position = "none", plot.tag = element_text(size = 8, face = "bold")) &
   ylab(NULL) 
 
 ptch
@@ -132,19 +132,19 @@ par("din")
 ggsave(plot = nolabs, 
        filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.pdf"),
        height = 70, width = 160, units = "mm")
-#ggsave(plot = nolabs, 
-#       filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.png"), 
-#       height = 5, width = 11, units = "in")
+ggsave(plot = nolabs, 
+       filename = here("OUTPUT/FIGS", "Traj_Adjusted_nolabs.png"), 
+       height = 70, width = 160, units = "mm")
 
 ## Try adding labels ----
 ## make text labels for rows (study) and columns (SDQ)
 
-r1 = text_grob("ALSPAC", rot = 90, size = 7)
-r2 = text_grob("GUS", rot = 90, size = 7)
-c1 = text_grob("Conduct Problems", size = 7)
-c2 = text_grob("Emotional Problems", size = 7)
-c3 = text_grob("Hyperactivity", size = 7)
-c4 = text_grob("Peer Problems", size = 7)
+r1 = text_grob("ALSPAC", rot = 90, size = 8)
+r2 = text_grob("GUS", rot = 90, size = 8)
+c1 = text_grob("Conduct Problems", size = 8)
+c2 = text_grob("Emotional Problems", size = 8)
+c3 = text_grob("Hyperactivity", size = 8)
+c4 = text_grob("Peer Problems", size = 8)
 
 ## specify layout
 arr = c(
@@ -168,14 +168,13 @@ fig = wrap_elements(full = ptch) + c1 + c2 + c3 + c4 + r1 + r2 + legend +
   plot_layout(design = arr, axis_titles = "collect", 
                        heights = c(0.1, 1, 1, 1, 1, 1), 
                        widths = c(0.1, 1, 1, 1, 1, 0.5)) &
-  theme(margins = margin(2,2,0,1))
+  theme(margins = margin(2,2,1,1))
 fig
 
 ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.pdf"), 
        height = 90, width = 180, units = "mm")
-#ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.png"), 
-#       height = 6, width = 12, units = "in")
-
+ggsave(plot = fig, filename = here("OUTPUT/FIGS", "Traj_Adjusted_labs.png"), 
+       height = 90, width = 180, units = "mm")
 
 # Supplementary figures ----
 
