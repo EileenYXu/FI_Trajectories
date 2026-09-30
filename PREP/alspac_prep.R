@@ -13,6 +13,9 @@ source(here("FUNS", "prep.R"))
 
 # Selecting variables to extract ----
 
+# pregnancy ID, birth order, ID for mothers with >1 eligible pregnancies
+ids = c("cidB3421", "qlet", "mz005l")
+
 # SDQ scores for each timepoint
 emot = c("kq348c", "ku707b", "kw6602b", "ta7025a", "tc4025a")
 conduct = c("kq348d", "ku708b", "kw6603b", "ta7025b", "tc4025b")
@@ -23,7 +26,7 @@ peer = c("kq348e", "ku709b", "kw6604b", "ta7025d", "tc4025d")
 age = c("kq998a","ku991a","kw9991a", "ta9991a", "tc9991a")
 
 # Covariates
-covars = c("cidB3421", "qlet", "k6200", "kz021", "h470", "kimd2010q5")
+covars = c("k6200", "kz021", "h470", "kimd2010q5")
 
 # EPDS questions
 epds = c("k3030","k3031","k3032","k3033","k3034","k3035","k3036","k3037","k3038","k3039")
@@ -34,14 +37,14 @@ epds = c("k3030","k3031","k3032","k3033","k3034","k3035","k3036","k3037","k3038"
 # EPDS prenatal, EPDS postnatal, ethnicity
 weightvars = c("mz028b", "c645a", "c755", "b032", "a006", "c525", "b665", "c601", "e391", "c804") 
 
-vars = c(covars, age, epds, emot, conduct, hyper, peer, weightvars)
+vars = c(ids, covars, age, epds, emot, conduct, hyper, peer, weightvars)
 
 # Tidying ALSPAC data ----
 dat = read_dta("ALSPAC.dta", col_select = all_of(vars)) # saves reading the full thing in
 
 # Keep data dictionary in environment to explore
 dict = get_data_dict(dat)
-#write.csv(dict, "DATA/dict_usedvars.csv", row.names = F)
+write.csv(dict, "DATA/dict_usedvars.csv", row.names = F)
 
 # Remove labelling
 dat = dat |> zap_labels() |> zap_label() |> zap_formats()
@@ -72,10 +75,9 @@ alspac = dat |> mutate(
   foodDiff = factor(k6200, levels = c(4, 3, 2, 1), 
                  labels = c("Not difficult", "Slightly", "Fairly", "Very"),
                  exclude = 5, ordered = T),
-  IMD = factor(kimd2010q5, levels = c(1, 2, 3, 4, 5), ordered = T), #1 is least deprived
+  IMD = factor(kimd2010q5, levels = c(1, 2, 3, 4, 5), ordered = T),# 1=least deprived
   
   # weighting variables
-  
   matAge = mz028b,
   matEd = case_match(c645a,
                     c(4, 5) ~ ">=A level",
@@ -150,13 +152,21 @@ nrow(inc_wide) - nrow(keepDat) #957 excluded, 5799 remaining
 
 # Create unrelated sample ----
 
+# Sibling pregnancies to keep/drop
+# see 2022 ALSPAC mothers update in Wellcome Open Res (https://doi.org/10.12688/wellcomeopenres.18564.2)
+# Yes, drop these mult mums = 1, No, keep all these cases = 2
+as.factor(keepDat$mz005l) |> table()
+keepDat = keepDat |> filter(mz005l==2) #17 cases dropped, 5782 remaining
+
 # Select one participant from each set of twins, weighted by the proportion of 
 # valid information
-unrelated = keepDat |> group_by(cidB3421) |> filter(n()==1) |> ungroup() |> pull(ID)
+unrelated = keepDat |> group_by(cidB3421) |> filter(n()==1) |> 
+  ungroup() |> pull(ID) #5658 singleton pregnancies
 related = keepDat |> group_by(cidB3421) |> filter(n()!=1) |> ungroup() |> 
   select(cidB3421, ID, qlet, ends_with(".miss")) |> 
   mutate(total.miss = (emot.miss + conduct.miss + hyper.miss + peer.miss),
          prop.valid = 1 - total.miss/20)
+length(unique(related$cidB3421)) #62 twin pregnancies (124 twin ppts)
 
 set.seed(9093029)
 
@@ -171,7 +181,7 @@ for (i in unique(related$cidB3421)) {
 
 # drop unused columns, except cid column which has family ids
 keepDat = keepDat |> filter(ID %in% unrelated) |> 
-  select(-ends_with(".miss"), -all_of(c(weightvars, covars[-1])))
+  select(-ends_with(".miss"), -all_of(c(weightvars, covars[-1]))) # n=5720
 rm(alspac, sdqcols, fam, inc_wide, related)
 
 # Impute missing weights variables ----
@@ -218,7 +228,8 @@ wt_preds = c("sex", "ethnicity", "finDiff", "smokePreg", "matClass", "matAge", "
 att = names(alspac_imp$data)[grep("in_", names(alspac_imp$data))]
 
 # Fit glm, get predicted probabilities, make ipw and stabilise sample size
-alspac_weighted = make_wt(mids.df = alspac_imp, outcome = att, preds = wt_preds, idcol = "ID")
+alspac_weighted = make_wt(mids.df = alspac_imp, outcome = att, preds = wt_preds, 
+                          idcol = "ID")
 
 # check probability at each sweep
 alspac_weighted$sweep_prob

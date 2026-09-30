@@ -176,5 +176,5 @@ peer.plot
 ```{r}
 save(list = c("c.dat", "e.dat", "h.dat", "p.dat"), file = here("OUTPUT/ALSPAC", "ALSPAC_ageonly_plotdat.rda"))
 modcomps = list("conduct" = conduct, "emot" = emot, "hyper" = hyper, "peer" = peer)
-openxlsx::write.xlsx(modcomps, file = here("OUTPUT/ALSPAC", "Age_Only_ModComps.xlsx"), row.names = TRUE)
+openxlsx::write.xlsx(modcomps, file = here("OUTPUT/ALSPAC", "Age_Only_ModComps.xlsx"), rowNames = TRUE)
 ```

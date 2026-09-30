@@ -78,7 +78,7 @@ changebygroup = FI3lvl |> group_by(OGlevel) |> count(T1vT2, T2vT3)
 summary(FI3lvl$OGlevel)
 
 #High FI  Low FI   No FI 
-    #229     625    3813 
+    #227     621    3805 
 
 write.csv(changebygroup, here("OUTPUT", "changebygroup.csv"))
 ```
